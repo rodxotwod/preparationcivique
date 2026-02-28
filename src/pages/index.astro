@@ -47,9 +47,6 @@ const title = "Préparation Civique - Examen de Citoyenneté Française";
 									{item.q}
 									<span class="icon">→</span>
 								</div>
-								<div class="answer-preview">
-									<p>{item.a}</p>
-								</div>
 							</a>
 						))}
 					</div>
@@ -89,9 +86,8 @@ const title = "Préparation Civique - Examen de Citoyenneté Française";
 			
 			cards.forEach(card => {
 				const questionText = card.querySelector('.question-text')?.textContent?.toLowerCase() || '';
-				const answerText = card.querySelector('.answer-preview')?.textContent?.toLowerCase() || '';
 				
-				if (questionText.includes(searchTerm) || answerText.includes(searchTerm)) {
+				if (questionText.includes(searchTerm)) {
 					(card as HTMLElement).style.display = 'block';
 					sectionHasMatch = true;
 				} else {
@@ -244,20 +240,6 @@ const title = "Préparation Civique - Examen de Citoyenneté Française";
 	}
 	.question-card:hover .icon {
 		transform: translateX(4px);
-	}
-
-	.answer-preview {
-		padding: 0 1.25rem 1.25rem;
-		font-size: 0.95rem;
-		line-height: 1.5;
-	}
-	.answer-preview p {
-		margin: 0;
-		color: #4a5568;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
 	}
 
 	.footer {
