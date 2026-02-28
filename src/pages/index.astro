@@ -7,7 +7,7 @@ const title = "Préparation Civique - Examen de Citoyenneté Française";
 
 <Layout title={title}>
 	<header class="header">
-		<div class="container header-content">
+		<div class="container">
 			<div class="logo">
 				<div class="flag">
 					<span class="blue"></span>
@@ -16,247 +16,164 @@ const title = "Préparation Civique - Examen de Citoyenneté Française";
 				</div>
 				<h1>Préparation Civique</h1>
 			</div>
-			<p class="subtitle">Tout pour réussir votre entretien de naturalisation française</p>
+			<p class="subtitle">Réussir votre entretien de naturalisation</p>
 		</div>
 	</header>
 
-	<main class="container">
-		<div class="search-container">
-			<input type="text" id="search-input" placeholder="Rechercher une question (ex: 14 juillet, Sénat, Laïcité...)" />
-		</div>
+	<div class="layout-wrapper container">
+		<aside class="sidebar">
+			<nav class="sticky-nav">
+				<h3>Sommaire</h3>
+				<ul>
+					{questionsData.map((category, index) => (
+						<li>
+							<a href={`#category-${index}`}>{category.category}</a>
+						</li>
+					))}
+				</ul>
+			</nav>
+		</aside>
 
-		<nav class="categories-nav">
-			<h2>Sommaire</h2>
-			<ul>
-				{questionsData.map((category, index) => (
-					<li>
-						<a href={`#category-${index}`}>{category.category}</a>
-					</li>
-				))}
-			</ul>
-		</nav>
-
-		<div class="questions-list">
+		<main class="content">
 			{questionsData.map((category, catIndex) => (
 				<section id={`category-${catIndex}`} class="category-section">
 					<h2 class="category-title">{category.category}</h2>
-					<div class="questions-grid">
-						{category.questions.map((item, qIndex) => (
-							<a href={`question/${item.slug}`} class="question-card">
-								<div class="question-text">
+					<ul class="questions-list">
+						{category.questions.map((item) => (
+							<li>
+								<a href={`question/${item.slug}`} class="question-link">
 									{item.q}
-									<span class="icon">→</span>
-								</div>
-							</a>
+								</a>
+							</li>
 						))}
-					</div>
+					</ul>
 				</section>
 			))}
-		</div>
-	</main>
+		</main>
+	</div>
 
 	<footer class="footer">
 		<div class="container">
-			<p>&copy; 2026 Préparation Civique - Basé sur QUESTION.MD</p>
+			<p>&copy; 2026 Préparation Civique - Ressources pour la Citoyenneté Française</p>
 		</div>
 	</footer>
 </Layout>
 
-<script>
-	const searchInput = document.getElementById('search-input');
-	const questionCards = document.querySelectorAll('.question-card');
-	const categorySections = document.querySelectorAll('.category-section');
-	const categoriesNav = document.querySelector('.categories-nav');
-
-	searchInput?.addEventListener('input', (e) => {
-		const searchTerm = (e.target as HTMLInputElement).value.toLowerCase().trim();
-		
-		if (searchTerm === '') {
-			questionCards.forEach(card => (card as HTMLElement).style.display = 'block');
-			categorySections.forEach(section => (section as HTMLElement).style.display = 'block');
-			(categoriesNav as HTMLElement).style.display = 'block';
-			return;
-		}
-
-		(categoriesNav as HTMLElement).style.display = 'none';
-
-		categorySections.forEach(section => {
-			let sectionHasMatch = false;
-			const cards = section.querySelectorAll('.question-card');
-			
-			cards.forEach(card => {
-				const questionText = card.querySelector('.question-text')?.textContent?.toLowerCase() || '';
-				
-				if (questionText.includes(searchTerm)) {
-					(card as HTMLElement).style.display = 'block';
-					sectionHasMatch = true;
-				} else {
-					(card as HTMLElement).style.display = 'none';
-				}
-			});
-
-			(section as HTMLElement).style.display = sectionHasMatch ? 'block' : 'none';
-		});
-	});
-</script>
-
 <style>
-	.search-container {
-		margin: -1.5rem 0 2rem;
-		position: sticky;
-		top: 1rem;
-		z-index: 100;
-	}
-	#search-input {
-		width: 100%;
-		padding: 1rem 1.5rem;
-		font-size: 1.1rem;
-		border: 2px solid var(--accent-blue);
-		border-radius: 50px;
-		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-		outline: none;
-		transition: border-color 0.2s, box-shadow 0.2s;
-	}
-	#search-input:focus {
-		border-color: var(--blue);
-		box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.15);
-	}
-
 	.header {
 		background: var(--blue);
 		color: white;
-		padding: 3rem 0;
-		text-align: center;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-	}
-	.header h1 {
-		color: white;
-		margin: 1rem 0 0.5rem;
-		font-size: 2.5rem;
-		font-weight: 800;
-	}
-	.subtitle {
-		font-size: 1.25rem;
-		opacity: 0.9;
-		max-width: 600px;
-		margin: 0 auto;
+		padding: 2rem 0;
+		border-bottom: 4px solid var(--red);
 	}
 	.logo {
 		display: flex;
-		flex-direction: column;
 		align-items: center;
+		gap: 1.5rem;
+	}
+	.header h1 {
+		color: white;
+		margin: 0;
+		font-size: 2rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+	}
+	.subtitle {
+		margin: 0.5rem 0 0;
+		font-size: 1.1rem;
+		opacity: 0.9;
 	}
 	.flag {
 		display: flex;
-		width: 60px;
-		height: 40px;
-		border-radius: 4px;
+		width: 45px;
+		height: 30px;
+		border-radius: 2px;
 		overflow: hidden;
-		border: 2px solid rgba(255, 255, 255, 0.2);
 	}
-	.flag span {
-		flex: 1;
-		height: 100%;
-	}
+	.flag span { flex: 1; height: 100%; }
 	.flag .blue { background: #002395; }
 	.flag .white { background: #ffffff; }
 	.flag .red { background: #ed2939; }
 
-	.categories-nav {
-		background: var(--card-bg);
+	.layout-wrapper {
+		display: grid;
+		grid-template-columns: 280px 1fr;
+		gap: 3rem;
+		margin-top: 3rem;
+	}
+
+	.sticky-nav {
+		position: sticky;
+		top: 2rem;
+		background: white;
 		padding: 1.5rem;
-		border-radius: 12px;
-		margin: 2rem 0;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		border-radius: 8px;
 		border: 1px solid var(--border-color);
 	}
-	.categories-nav h2 {
-		font-size: 1.25rem;
+	.sticky-nav h3 {
+		font-size: 1rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: #718096;
 		margin-bottom: 1rem;
-		border-bottom: 2px solid var(--light-gray);
 		padding-bottom: 0.5rem;
+		border-bottom: 1px solid var(--light-gray);
 	}
-	.categories-nav ul {
+	.sticky-nav ul {
 		list-style: none;
 		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 1rem;
+		margin: 0;
 	}
-	.categories-nav a {
+	.sticky-nav li { margin-bottom: 0.75rem; }
+	.sticky-nav a {
 		text-decoration: none;
-		color: var(--accent-blue);
-		font-weight: 500;
+		color: var(--text-color);
+		font-size: 0.95rem;
 		transition: color 0.2s;
+		display: block;
+		line-height: 1.4;
 	}
-	.categories-nav a:hover {
-		color: var(--blue);
-		text-decoration: underline;
-	}
+	.sticky-nav a:hover { color: var(--accent-blue); }
 
-	.category-section {
-		margin-bottom: 4rem;
-	}
+	.category-section { margin-bottom: 4rem; }
 	.category-title {
-		font-size: 1.75rem;
+		font-size: 1.5rem;
+		color: var(--blue);
 		margin-bottom: 1.5rem;
-		padding-left: 1rem;
-		border-left: 6px solid var(--red);
+		padding-bottom: 0.75rem;
+		border-bottom: 2px solid var(--light-gray);
 	}
 
-	.questions-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
+	.questions-list {
+		list-style: none;
+		padding: 0;
 	}
-
-	.question-card {
-		background: var(--card-bg);
-		border: 1px solid var(--border-color);
-		border-radius: 8px;
-		overflow: hidden;
-		transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+	.questions-list li {
+		padding: 0.75rem 0;
+		border-bottom: 1px solid #edf2f7;
+	}
+	.question-link {
 		text-decoration: none;
-		color: inherit;
+		color: #2d3748;
+		font-size: 1.1rem;
+		font-weight: 500;
+		transition: all 0.2s;
 		display: block;
 	}
-	.question-card:hover {
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-		border-color: var(--accent-blue);
-	}
-
-	.question-text {
-		padding: 1.25rem;
-		font-weight: 600;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		color: var(--text-color);
-	}
-	.icon {
-		font-size: 1.2rem;
+	.question-link:hover {
 		color: var(--accent-blue);
-		transition: transform 0.3s;
-	}
-	.question-card:hover .icon {
-		transform: translateX(4px);
+		transform: translateX(5px);
 	}
 
 	.footer {
 		text-align: center;
-		padding: 3rem 0;
-		margin-top: 4rem;
-		border-top: 1px solid var(--border-color);
-		color: #718096;
-		font-size: 0.875rem;
+		padding: 4rem 0;
+		color: #a0aec0;
+		font-size: 0.9rem;
 	}
 
-	@media (max-width: 600px) {
-		.header h1 {
-			font-size: 1.75rem;
-		}
-		.category-title {
-			font-size: 1.5rem;
-		}
+	@media (max-width: 900px) {
+		.layout-wrapper { grid-template-columns: 1fr; }
+		.sidebar { display: none; }
 	}
 </style>

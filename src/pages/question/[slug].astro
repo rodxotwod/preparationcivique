@@ -17,10 +17,7 @@ export async function getStaticPaths() {
 
 const { question, category } = Astro.props;
 
-// Création d'un seed unique basé sur le slug pour avoir une image constante par question
 const seed = question.slug.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-
-// Construction de l'URL avec des paramètres optimisés
 const promptBase = `French civic exam, ${question.q}, France, patriotic, highly detailed, artistic illustration, style neo banana 2`;
 const imagePrompt = encodeURIComponent(promptBase);
 const imageUrl = `https://pollinations.ai/p/${imagePrompt}?width=1024&height=576&seed=${seed}&nologo=true`;
@@ -38,12 +35,14 @@ const imageUrl = `https://pollinations.ai/p/${imagePrompt}?width=1024&height=576
 		<article class="question-article">
 			<h1 class="question-title">{question.q}</h1>
 			
-			<div class="image-container">
+			<div class="image-container" id="illustration-box">
 				<img 
+					id="illustration-img"
 					src={imageUrl} 
 					alt={`Illustration pour : ${question.q}`} 
 					width="1024" 
 					height="576"
+					onerror="this.parentElement.style.display='none';"
 				/>
 			</div>
 
@@ -114,7 +113,7 @@ const imageUrl = `https://pollinations.ai/p/${imagePrompt}?width=1024&height=576
 		border-radius: 8px;
 		overflow: hidden;
 		margin-bottom: 2rem;
-		background: #edf2f7; /* Couleur gris neutre pendant le chargement */
+		background: #edf2f7;
 		aspect-ratio: 16 / 9;
 		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 	}
