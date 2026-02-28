@@ -1,0 +1,179 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import questionsData from '../../data/questions.json';
+
+export async function getStaticPaths() {
+  const paths = [];
+  questionsData.forEach((category) => {
+    category.questions.forEach((q) => {
+      paths.push({
+        params: { slug: q.slug },
+        props: { question: q, category: category.category },
+      });
+    });
+  });
+  return paths;
+}
+
+const { question, category } = Astro.props;
+
+// Création d'un seed unique basé sur le slug pour avoir une image constante par question
+const seed = question.slug.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
+// Construction de l'URL avec des paramètres optimisés
+const promptBase = `French civic exam, ${question.q}, France, patriotic, highly detailed, artistic illustration, style neo banana 2`;
+const imagePrompt = encodeURIComponent(promptBase);
+const imageUrl = `https://pollinations.ai/p/${imagePrompt}?width=1024&height=576&seed=${seed}&nologo=true`;
+---
+
+<Layout title={`${question.q} - Préparation Civique`}>
+	<header class="header-small">
+		<div class="container">
+			<a href="/" class="back-link">← Retour au sommaire</a>
+			<p class="category-tag">{category}</p>
+		</div>
+	</header>
+
+	<main class="container">
+		<article class="question-article">
+			<h1 class="question-title">{question.q}</h1>
+			
+			<div class="image-container">
+				<img 
+					src={imageUrl} 
+					alt={`Illustration pour : ${question.q}`} 
+					width="1024" 
+					height="576"
+				/>
+			</div>
+
+			<section class="answer-section">
+				<h2>Réponse officielle</h2>
+				<p class="main-answer">{question.a}</p>
+			</section>
+
+			<section class="details-section">
+				<h2>Pour aller plus loin</h2>
+				<p class="details-text">{question.details}</p>
+			</section>
+		</article>
+	</main>
+
+	<footer class="footer">
+		<div class="container">
+			<p>&copy; 2026 Préparation Civique</p>
+		</div>
+	</footer>
+</Layout>
+
+<style>
+	.header-small {
+		background: var(--blue);
+		color: white;
+		padding: 1.5rem 0;
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	}
+	.back-link {
+		color: white;
+		text-decoration: none;
+		font-weight: 600;
+		display: inline-block;
+		margin-bottom: 0.5rem;
+		transition: opacity 0.2s;
+	}
+	.back-link:hover {
+		opacity: 0.8;
+		text-decoration: underline;
+	}
+	.category-tag {
+		font-size: 0.9rem;
+		opacity: 0.9;
+		margin: 0;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.question-article {
+		background: var(--card-bg);
+		padding: 2.5rem;
+		border-radius: 12px;
+		margin: 2rem 0;
+		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+		border: 1px solid var(--border-color);
+	}
+
+	.question-title {
+		font-size: 2.25rem;
+		color: var(--blue);
+		margin-bottom: 1.5rem;
+		line-height: 1.2;
+	}
+
+	.image-container {
+		width: 100%;
+		border-radius: 8px;
+		overflow: hidden;
+		margin-bottom: 2rem;
+		background: #edf2f7; /* Couleur gris neutre pendant le chargement */
+		aspect-ratio: 16 / 9;
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	}
+	
+	.image-container img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+
+	.answer-section, .details-section {
+		margin-bottom: 2rem;
+	}
+
+	.answer-section h2, .details-section h2 {
+		font-size: 1.5rem;
+		color: var(--text-color);
+		margin-bottom: 1rem;
+		border-bottom: 2px solid var(--light-gray);
+		padding-bottom: 0.5rem;
+	}
+
+	.main-answer {
+		font-size: 1.25rem;
+		font-weight: 500;
+		color: #2d3748;
+		padding: 1.5rem;
+		background: #ebf8ff;
+		border-left: 4px solid var(--accent-blue);
+		border-radius: 0 8px 8px 0;
+		margin: 0;
+	}
+
+	.details-text {
+		font-size: 1.1rem;
+		line-height: 1.7;
+		color: #4a5568;
+	}
+
+	.footer {
+		text-align: center;
+		padding: 3rem 0;
+		margin-top: 2rem;
+		border-top: 1px solid var(--border-color);
+		color: #718096;
+		font-size: 0.875rem;
+	}
+
+	@media (max-width: 600px) {
+		.question-article {
+			padding: 1.5rem;
+		}
+		.question-title {
+			font-size: 1.75rem;
+		}
+		.main-answer {
+			font-size: 1.1rem;
+			padding: 1rem;
+		}
+	}
+</style>

@@ -1,0 +1,58 @@
+---
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="Préparez-vous pour l'examen de citoyenneté française" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>
+<style is:global>
+	:root {
+		--blue: #002395;
+		--white: #ffffff;
+		--red: #ed2939;
+		--light-gray: #f4f7f6;
+		--border-color: #e2e8f0;
+		--text-color: #1a202c;
+		--accent-blue: #3182ce;
+		--card-bg: #ffffff;
+	}
+	html {
+		font-family: 'Inter', system-ui, -apple-system, sans-serif;
+		background: var(--light-gray);
+		color: var(--text-color);
+		scroll-behavior: smooth;
+	}
+	body {
+		margin: 0;
+		padding: 0;
+		min-height: 100vh;
+		line-height: 1.5;
+	}
+	* {
+		box-sizing: border-box;
+	}
+	.container {
+		max-width: 900px;
+		margin: 0 auto;
+		padding: 2rem 1rem;
+	}
+	h1, h2, h3 {
+		color: var(--blue);
+		margin-top: 0;
+	}
+</style>
