@@ -42,7 +42,7 @@ const title = "Préparation Civique - Examen de Citoyenneté Française";
 					<h2 class="category-title">{category.category}</h2>
 					<div class="questions-grid">
 						{category.questions.map((item, qIndex) => (
-							<a href={`/question/${item.slug}`} class="question-card">
+							<a href={`question/${item.slug}`} class="question-card">
 								<div class="question-text">
 									{item.q}
 									<span class="icon">→</span>
