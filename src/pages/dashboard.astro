@@ -1,0 +1,225 @@
+---
+import Layout from '../layouts/Layout.astro';
+import questionsData from '../data/questions.json';
+
+const title = "Mon Tableau de Bord - Préparation Civique";
+const homeUrl = `${import.meta.env.BASE_URL}/`;
+---
+
+<Layout title={title}>
+	<header class="header-small">
+		<div class="container">
+			<nav class="nav-links">
+				<a href={homeUrl} class="back-link">← Retour à l'accueil</a>
+				<span class="category-tag">Tableau de Bord</span>
+			</nav>
+		</div>
+	</header>
+
+	<main class="container dashboard-container">
+		<div class="dashboard-grid">
+			<!-- Main Column -->
+			<div class="main-column">
+				<section class="card session-card text-center">
+					<h2>Prêt pour votre session du jour ?</h2>
+					<p>La clé de la réussite est la régularité. Une session prend environ 5 à 10 minutes.</p>
+					
+					<div class="session-stats">
+						<div class="stat-box">
+							<span class="stat-num" id="due-count">0</span>
+							<span class="stat-label">À réviser</span>
+						</div>
+						<div class="stat-box">
+							<span class="stat-num" id="new-count">0</span>
+							<span class="stat-label">Nouvelles</span>
+						</div>
+					</div>
+
+					<a href={`${import.meta.env.BASE_URL}/session/`} class="btn-primary" id="start-session-btn">Démarrer la session</a>
+				</section>
+
+				<section class="card">
+					<h3>Vos compétences par thème</h3>
+					<div id="radar-container" class="radar-container">
+						<!-- Custom simple bars for skills, since importing Chart.js via CDN in Astro might have CSP or timing issues. -->
+						<div id="skills-breakdown"></div>
+					</div>
+				</section>
+			</div>
+
+			<!-- Sidebar -->
+			<div class="sidebar">
+				<section class="card stats-card">
+					<h3>Statistiques</h3>
+					<div class="stat-row">
+						<div class="stat-icon">🔥</div>
+						<div class="stat-info">
+							<span class="stat-val" id="streak-count">0 jours</span>
+							<span class="stat-desc">Série actuelle</span>
+						</div>
+					</div>
+					<div class="stat-row">
+						<div class="stat-icon">🎯</div>
+						<div class="stat-info">
+							<span class="stat-val" id="global-score">0/20</span>
+							<span class="stat-desc">Score Initial</span>
+						</div>
+					</div>
+					<div class="stat-row">
+						<div class="stat-icon">🧠</div>
+						<div class="stat-info">
+							<span class="stat-val" id="cards-memorized">0</span>
+							<span class="stat-desc">Cartes en mémoire</span>
+						</div>
+					</div>
+				</section>
+				
+				<section class="card info-card">
+					<h3>Comment ça marche ?</h3>
+					<p>Notre algorithme de répétition espacée (SRS) analyse vos réponses. Si vous trouvez une question difficile, elle reviendra plus souvent. Si elle est facile, elle s'espacera dans le temps pour consolider votre mémoire à long terme.</p>
+					<button id="reset-data" class="btn-text">Réinitialiser ma progression</button>
+				</section>
+			</div>
+		</div>
+
+		<!-- Pass data to client-side script -->
+		<div id="dashboard-data" 
+			 data-base-url={import.meta.env.BASE_URL} 
+			 data-questions={JSON.stringify(questionsData)}>
+		</div>
+	</main>
+</Layout>
+
+<script>
+	import { getProfile, getDueItems, clearProfile } from '../utils/store.js';
+
+	const dataEl = document.getElementById('dashboard-data');
+	const base_url = dataEl?.getAttribute('data-base-url') || '';
+	const questionsData = JSON.parse(dataEl?.getAttribute('data-questions') || '[]');
+
+	document.addEventListener('DOMContentLoaded', () => {
+		const profile = getProfile();
+		
+		if (!profile || !profile.diagnosticDone) {
+			window.location.href = `${base_url}/diagnostic/`;
+			return;
+		}
+
+		// Calculate dues
+		const allSlugs = questionsData.flatMap(c => c.questions.map(q => q.slug));
+		const { due, newItems } = getDueItems(allSlugs, 10, 5);
+
+		document.getElementById('due-count').textContent = due.length;
+		document.getElementById('new-count').textContent = newItems.length;
+
+		if (due.length === 0 && newItems.length === 0) {
+			const btn = document.getElementById('start-session-btn');
+			btn.textContent = "Session terminée pour aujourd'hui 🎉";
+			btn.style.background = "#31c48d";
+			btn.style.pointerEvents = "none";
+		}
+
+		// Update Stats
+		document.getElementById('streak-count').textContent = `${profile.streak || 0} jours`;
+		document.getElementById('global-score').textContent = `${profile.globalScore || 0}/20`;
+		
+		let memorized = 0;
+		if (profile.srs) {
+			Object.values(profile.srs).forEach(item => {
+				if (item.interval > 1) memorized++;
+			});
+		}
+		document.getElementById('cards-memorized').textContent = memorized;
+
+		// Skills Breakdown
+		const breakdownBox = document.getElementById('skills-breakdown');
+		if (profile.scores) {
+			Object.keys(profile.scores).forEach(cat => {
+				// Assuming out of 4 for the diagnostic test
+				const maxScore = 4;
+				const score = profile.scores[cat];
+				const perc = Math.round((score / maxScore) * 100);
+				
+				const row = document.createElement('div');
+				row.className = 'breakdown-row';
+				row.innerHTML = `
+					<div class="bd-label">${cat}</div>
+					<div class="bd-bar-container">
+						<div class="bd-bar" style="width: ${perc}%; background: ${perc > 50 ? 'var(--blue)' : '#f98080'}"></div>
+					</div>
+					<div class="bd-score">${perc}%</div>
+				`;
+				breakdownBox.appendChild(row);
+			});
+		}
+
+		// Reset Data
+		document.getElementById('reset-data').addEventListener('click', () => {
+			if (confirm("Voulez-vous vraiment effacer toute votre progression ?")) {
+				clearProfile();
+				window.location.href = `${base_url}/`;
+			}
+		});
+	});
+</script>
+
+<style>
+	.header-small { background: var(--blue); color: white; padding: 1.5rem 0; border-bottom: 3px solid var(--red); }
+	.nav-links { display: flex; justify-content: space-between; align-items: center; }
+	.back-link { color: white; text-decoration: none; font-weight: 700; }
+	.category-tag { background: rgba(255,255,255,0.2); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+
+	.dashboard-container { margin: 3rem auto; }
+	
+	.dashboard-grid {
+		display: grid;
+		grid-template-columns: 2fr 1fr;
+		gap: 2rem;
+	}
+
+	.card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid var(--border-color); margin-bottom: 2rem;}
+	.text-center { text-align: center; }
+
+	.session-card { padding: 3rem 2rem; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);}
+	.session-card h2 { font-size: 2rem; color: #1a202c; margin-bottom: 1rem; }
+	.session-card p { color: #4a5568; margin-bottom: 2.5rem; font-size: 1.1rem; }
+
+	.session-stats { display: flex; justify-content: center; gap: 3rem; margin-bottom: 3rem; }
+	.stat-box { display: flex; flex-direction: column; align-items: center; }
+	.stat-num { font-size: 3rem; font-weight: 900; color: var(--blue); line-height: 1; margin-bottom: 0.5rem; }
+	.stat-label { font-weight: 600; color: #718096; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 0.05em; }
+
+	.btn-primary { background: var(--blue); color: white; border: none; padding: 1.25rem 3rem; border-radius: 50px; font-weight: 800; cursor: pointer; font-size: 1.2rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 8px 20px rgba(0,35,149,0.25); display: inline-block; text-decoration: none; }
+	.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(0,35,149,0.35); background: #001d7e; }
+
+	.stats-card h3, .info-card h3 { font-size: 1.25rem; color: #1a202c; margin-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem; }
+	
+	.stat-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+	.stat-row:last-child { margin-bottom: 0; }
+	.stat-icon { font-size: 2rem; background: #f1f5f9; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+	.stat-info { display: flex; flex-direction: column; }
+	.stat-val { font-weight: 800; font-size: 1.2rem; color: #2d3748; }
+	.stat-desc { color: #718096; font-size: 0.9rem; }
+
+	.info-card p { font-size: 0.95rem; color: #4a5568; line-height: 1.6; margin-bottom: 1.5rem;}
+	.btn-text { background: none; border: none; color: var(--red); font-weight: 600; cursor: pointer; text-decoration: underline; padding: 0; font-size: 0.9rem;}
+
+	/* Breakdown Bars */
+	.breakdown-row { display: flex; align-items: center; margin-bottom: 1.25rem; gap: 1rem; }
+	.bd-label { width: 45%; font-weight: 600; color: #4a5568; font-size: 0.9rem; line-height: 1.2; }
+	.bd-bar-container { flex: 1; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
+	.bd-bar { height: 100%; border-radius: 5px; }
+	.bd-score { width: 15%; text-align: right; font-weight: 700; color: #1a202c; font-size: 0.9rem; }
+
+	@media (max-width: 900px) {
+		.dashboard-grid { grid-template-columns: 1fr; }
+	}
+	@media (max-width: 640px) {
+		.session-stats { gap: 1.5rem; }
+		.stat-num { font-size: 2.5rem; }
+		.btn-primary { padding: 1rem 2rem; font-size: 1.1rem; }
+		.breakdown-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+		.bd-label, .bd-score { width: 100%; text-align: left; }
+		.bd-bar-container { width: 100%; }
+	}
+</style>

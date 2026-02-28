@@ -1,0 +1,312 @@
+---
+import Layout from '../layouts/Layout.astro';
+import questionsData from '../data/questions.json';
+
+const title = "Session d'apprentissage - Préparation Civique";
+const homeUrl = `${import.meta.env.BASE_URL}/`;
+---
+
+<Layout title={title}>
+	<header class="header-small">
+		<div class="container">
+			<nav class="nav-links">
+				<a href={`${import.meta.env.BASE_URL}/dashboard/`} class="back-link">← Quitter la session</a>
+				<span class="category-tag">Session Quotidienne</span>
+			</nav>
+		</div>
+	</header>
+
+	<main class="container session-container">
+		<div id="session-loading" class="card text-center">
+			<h2>Préparation de votre session...</h2>
+		</div>
+
+		<div id="session-play" class="card hidden">
+			<div class="session-meta">
+				<span id="session-counter">Carte 1/15</span>
+				<div class="progress-bar"><div id="progress" class="progress-fill"></div></div>
+				<div class="deck-counts">
+					<span class="count-new" id="count-new-ui">5 nouvelles</span>
+					<span class="count-due" id="count-due-ui">10 à réviser</span>
+				</div>
+			</div>
+			
+			<div class="flashcard">
+				<div class="fc-front">
+					<span class="fc-category" id="fc-cat">Catégorie</span>
+					<h2 id="fc-q">Question ici...</h2>
+				</div>
+				
+				<div id="fc-back" class="fc-back hidden">
+					<hr class="fc-divider" />
+					<div class="fc-answer-content">
+						<p id="fc-a">Réponse ici...</p>
+					</div>
+					<div class="fc-details" id="fc-details">
+						Détails supplémentaires...
+					</div>
+				</div>
+			</div>
+
+			<div class="session-actions">
+				<button id="btn-show-answer" class="btn-primary btn-large">Afficher la réponse</button>
+				
+				<div id="rating-buttons" class="rating-buttons hidden">
+					<p class="rating-prompt">Comment évaluez-vous votre réponse ?</p>
+					<div class="btn-group">
+						<button class="btn-rate rate-again" data-grade="0">
+							<span class="rate-label">À revoir</span>
+							<span class="rate-time">&lt; 1 min</span>
+						</button>
+						<button class="btn-rate rate-hard" data-grade="1">
+							<span class="rate-label">Difficile</span>
+							<span class="rate-time">1 jour</span>
+						</button>
+						<button class="btn-rate rate-good" data-grade="2">
+							<span class="rate-label">Correct</span>
+							<span class="rate-time" id="time-good">~3 jours</span>
+						</button>
+						<button class="btn-rate rate-easy" data-grade="3">
+							<span class="rate-label">Facile</span>
+							<span class="rate-time" id="time-easy">~5 jours</span>
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="session-end" class="card hidden text-center">
+			<div class="end-icon">🎉</div>
+			<h2>Session terminée !</h2>
+			<p>Excellent travail. Vous avez renforcé vos connaissances pour l'entretien.</p>
+			<a href={`${import.meta.env.BASE_URL}/dashboard/`} class="btn-primary mt-2">Retour au tableau de bord</a>
+		</div>
+
+		<!-- Pass data to client-side script -->
+		<div id="session-data" data-questions={JSON.stringify(questionsData)}></div>
+	</main>
+</Layout>
+
+<script>
+	import { getProfile, getDueItems, updateSrsItem, recordSessionComplete } from '../utils/store.js';
+
+	const dataEl = document.getElementById('session-data');
+	const questionsData = JSON.parse(dataEl?.getAttribute('data-questions') || '[]');
+
+	// Flatten all questions for easy lookup
+	const allQuestionsMap = {};
+	questionsData.forEach(cat => {
+		cat.questions.forEach(q => {
+			allQuestionsMap[q.slug] = { ...q, category: cat.category };
+		});
+	});
+	const allSlugs = Object.keys(allQuestionsMap);
+
+	let sessionQueue = [];
+	let currentIndex = 0;
+	let newCount = 0;
+	let dueCount = 0;
+
+	const loading = document.getElementById('session-loading');
+	const play = document.getElementById('session-play');
+	const end = document.getElementById('session-end');
+	
+	const counterUI = document.getElementById('session-counter');
+	const progressUI = document.getElementById('progress');
+	const countNewUI = document.getElementById('count-new-ui');
+	const countDueUI = document.getElementById('count-due-ui');
+
+	const fcCat = document.getElementById('fc-cat');
+	const fcQ = document.getElementById('fc-q');
+	const fcA = document.getElementById('fc-a');
+	const fcBack = document.getElementById('fc-back');
+	const fcDetails = document.getElementById('fc-details');
+
+	const btnShow = document.getElementById('btn-show-answer');
+	const ratingButtons = document.getElementById('rating-buttons');
+
+	document.addEventListener('DOMContentLoaded', () => {
+		const profile = getProfile();
+		if (!profile) {
+			window.location.href = `${import.meta.env.BASE_URL}/`;
+			return;
+		}
+
+		// Init session queue
+		const maxDue = 15;
+		const maxNew = 5;
+		const { due, newItems } = getDueItems(allSlugs, maxDue, maxNew);
+		
+		newCount = newItems.length;
+		dueCount = due.length;
+		
+		// Mix them up slightly or put due first. Let's put due first then new, and if user fails a card, we could push it to end of queue.
+		// For simplicity, we just put them in a linear queue.
+		sessionQueue = [...due, ...newItems];
+
+		if (sessionQueue.length === 0) {
+			loading.classList.add('hidden');
+			end.classList.remove('hidden');
+			end.querySelector('h2').textContent = "Aucune carte prévue !";
+			end.querySelector('p').textContent = "Vous êtes à jour dans vos révisions pour aujourd'hui.";
+			return;
+		}
+
+		loading.classList.add('hidden');
+		play.classList.remove('hidden');
+		showCard();
+	});
+
+	function showCard() {
+		if (currentIndex >= sessionQueue.length) {
+			finishSession();
+			return;
+		}
+
+		const slug = sessionQueue[currentIndex];
+		const qData = allQuestionsMap[slug];
+
+		fcCat.textContent = qData.category;
+		fcQ.textContent = qData.q;
+		fcA.textContent = qData.a;
+		if (qData.details) {
+			fcDetails.textContent = qData.details;
+			fcDetails.style.display = 'block';
+		} else {
+			fcDetails.style.display = 'none';
+		}
+
+		// Reset UI
+		fcBack.classList.add('hidden');
+		btnShow.classList.remove('hidden');
+		ratingButtons.classList.add('hidden');
+
+		// Update Meta
+		counterUI.textContent = `Carte ${currentIndex + 1} / ${sessionQueue.length}`;
+		progressUI.style.width = `${(currentIndex / sessionQueue.length) * 100}%`;
+		countNewUI.textContent = `${newCount} nouvelles`;
+		countDueUI.textContent = `${dueCount} à réviser`;
+	}
+
+	btnShow.addEventListener('click', () => {
+		btnShow.classList.add('hidden');
+		fcBack.classList.remove('hidden');
+		ratingButtons.classList.remove('hidden');
+		
+		// Update estimated times based on profile for this card (Optional advanced UI, keeping it static for now or simple)
+		const profile = getProfile();
+		const slug = sessionQueue[currentIndex];
+		const item = profile.srs[slug] || { reps: 0, interval: 0, ease: 2.5 };
+		
+		let goodInt = item.reps === 0 ? 1 : (item.reps === 1 ? 6 : Math.round(item.interval * item.ease));
+		let easyInt = item.reps === 0 ? 4 : Math.round(goodInt * 1.3);
+		
+		document.getElementById('time-good').textContent = goodInt === 1 ? "1 jour" : `~${goodInt} jours`;
+		document.getElementById('time-easy').textContent = `~${easyInt} jours`;
+	});
+
+	document.querySelectorAll('.btn-rate').forEach(btn => {
+		btn.addEventListener('click', (e) => {
+			const grade = parseInt(e.currentTarget.getAttribute('data-grade'));
+			const slug = sessionQueue[currentIndex];
+			
+			// Process SRS
+			updateSrsItem(slug, grade);
+
+			// If Again (0), push to end of queue to review again in same session
+			if (grade === 0) {
+				sessionQueue.push(slug);
+				// We don't update newCount or dueCount UI here to keep it simple
+			} else {
+				// We consider it done for today
+				// Determine if it was new or due to decrement UI
+				const profile = getProfile();
+				const wasNew = profile.srs[slug].reps === 1; // It just got its first rep
+				if (wasNew) newCount = Math.max(0, newCount - 1);
+				else dueCount = Math.max(0, dueCount - 1);
+			}
+
+			currentIndex++;
+			showCard();
+		});
+	});
+
+	function finishSession() {
+		play.classList.add('hidden');
+		end.classList.remove('hidden');
+		recordSessionComplete();
+	}
+</script>
+
+<style>
+	.header-small { background: var(--blue); color: white; padding: 1.5rem 0; border-bottom: 3px solid var(--red); }
+	.nav-links { display: flex; justify-content: space-between; align-items: center; }
+	.back-link { color: white; text-decoration: none; font-weight: 700; }
+	.category-tag { background: rgba(255,255,255,0.2); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+
+	.session-container { margin: 3rem auto; max-width: 700px !important; min-height: 70vh;}
+	.card { background: white; padding: 2.5rem; border-radius: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.08); border: 1px solid var(--border-color); }
+	.text-center { text-align: center; }
+	.hidden { display: none !important; }
+	.mt-2 { margin-top: 2rem; display: inline-block; }
+
+	.session-meta { margin-bottom: 2rem; }
+	#session-counter { font-weight: 700; color: #718096; text-transform: uppercase; font-size: 0.85rem; margin-bottom: 0.75rem; display: block; }
+	.progress-bar { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 1rem; }
+	.progress-fill { background: var(--blue); height: 100%; transition: width 0.3s; }
+	
+	.deck-counts { display: flex; gap: 1rem; font-size: 0.85rem; font-weight: 600; }
+	.count-new { color: var(--blue); background: #ebf4ff; padding: 0.2rem 0.6rem; border-radius: 10px; }
+	.count-due { color: #d97706; background: #fffaf0; padding: 0.2rem 0.6rem; border-radius: 10px; }
+
+	.flashcard { min-height: 250px; display: flex; flex-direction: column; justify-content: center; margin-bottom: 3rem; }
+	.fc-front { text-align: center; }
+	.fc-category { display: inline-block; color: var(--red); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 1rem; letter-spacing: 0.05em; }
+	#fc-q { font-size: 1.8rem; color: #1a202c; line-height: 1.4; margin: 0; }
+
+	.fc-divider { border: 0; height: 2px; background: #e2e8f0; margin: 2rem 0; }
+	.fc-answer-content { background: #def7ec; padding: 1.5rem; border-radius: 16px; border: 1px solid #31c48d; }
+	#fc-a { font-size: 1.25rem; font-weight: 600; color: #03543f; margin: 0; line-height: 1.5; }
+	
+	.fc-details { margin-top: 1.5rem; font-size: 0.95rem; color: #4a5568; line-height: 1.6; padding: 1rem; background: #f8fafc; border-radius: 12px; border-left: 4px solid var(--blue); }
+
+	.session-actions { display: flex; flex-direction: column; align-items: center; }
+	.btn-large { width: 100%; max-width: 400px; padding: 1.25rem !important; font-size: 1.2rem !important; }
+
+	.btn-primary { background: var(--blue); color: white; border: none; padding: 1rem 2.5rem; border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 1.1rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 12px rgba(0,35,149,0.3); text-decoration: none; }
+	.btn-primary:hover { transform: translateY(-3px); background: #001d7e; }
+
+	.rating-prompt { font-weight: 600; color: #4a5568; margin-bottom: 1rem; }
+	.btn-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; width: 100%; }
+	
+	.btn-rate { background: white; border: 2px solid #e2e8f0; border-radius: 16px; padding: 1rem 0.5rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; transition: all 0.2s; }
+	.rate-label { font-weight: 700; font-size: 1rem; }
+	.rate-time { font-size: 0.8rem; color: #718096; }
+
+	.btn-rate:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+	
+	.rate-again { border-color: #fca5a5; }
+	.rate-again .rate-label { color: #dc2626; }
+	.rate-again:hover { background: #fef2f2; }
+
+	.rate-hard { border-color: #fcd34d; }
+	.rate-hard .rate-label { color: #d97706; }
+	.rate-hard:hover { background: #fffbeb; }
+
+	.rate-good { border-color: #6ee7b7; }
+	.rate-good .rate-label { color: #059669; }
+	.rate-good:hover { background: #ecfdf5; }
+
+	.rate-easy { border-color: #93c5fd; }
+	.rate-easy .rate-label { color: #047857; }
+	.rate-easy:hover { background: #f0fdf4; }
+
+	.end-icon { font-size: 4rem; margin-bottom: 1rem; }
+
+	@media (max-width: 640px) {
+		.card { padding: 1.5rem; }
+		.btn-group { grid-template-columns: repeat(2, 1fr); }
+		#fc-q { font-size: 1.4rem; }
+		#fc-a { font-size: 1.1rem; }
+	}
+</style>

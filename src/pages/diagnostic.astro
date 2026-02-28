@@ -1,0 +1,264 @@
+---
+import Layout from '../layouts/Layout.astro';
+import questionsData from '../data/questions.json';
+
+const title = "Diagnostic de niveau - Préparation Civique";
+const homeUrl = `${import.meta.env.BASE_URL}/`;
+---
+
+<Layout title={title}>
+	<header class="header-small">
+		<div class="container">
+			<nav class="nav-links">
+				<a href={homeUrl} class="back-link">← Retour à l'accueil</a>
+				<span class="category-tag">Test de Positionnement</span>
+			</nav>
+		</div>
+	</header>
+
+	<main class="container quiz-container">
+		<div id="quiz-intro" class="card text-center">
+			<h1>Évaluez votre niveau initial</h1>
+			<p>Ce test de 20 questions couvre les 5 thèmes principaux de l'entretien. Il nous permettra de créer votre programme de révision sur-mesure.</p>
+			<button id="start-quiz" class="btn-primary">Démarrer le test (5 min)</button>
+		</div>
+
+		<div id="quiz-play" class="card hidden">
+			<div class="quiz-header">
+				<div class="progress-bar"><div id="progress" class="progress-fill"></div></div>
+				<div class="header-meta">
+					<span id="question-category" class="cat-label">Catégorie</span>
+					<span id="question-counter">1/20</span>
+				</div>
+			</div>
+			
+			<div class="question-box">
+				<h2 id="quiz-question-text">Question ici</h2>
+			</div>
+
+			<div id="quiz-options" class="options-grid">
+				<!-- Options dynamically injected here -->
+			</div>
+
+			<div id="quiz-feedback" class="feedback hidden">
+				<p id="feedback-text"></p>
+				<button id="next-question" class="btn-primary">Suivant</button>
+			</div>
+		</div>
+
+		<div id="quiz-results" class="card hidden text-center">
+			<h2>Test Terminé !</h2>
+			<p>Voici votre score global et le détail par catégorie.</p>
+			
+			<div class="score-circle">
+				<span id="final-score">0</span><small>/20</small>
+			</div>
+
+			<div class="results-breakdown" id="results-breakdown">
+				<!-- Category scores injected here -->
+			</div>
+
+			<div class="results-actions">
+				<a href={`${import.meta.env.BASE_URL}/dashboard/`} class="btn-primary" id="btn-to-dashboard">Accéder à mon tableau de bord</a>
+			</div>
+		</div>
+
+		<!-- Pass data to client-side script -->
+		<div id="data-bridge" data-questions={JSON.stringify(questionsData)}></div>
+	</main>
+
+</Layout>
+
+<script>
+	import { saveDiagnostic } from '../utils/store.js';
+
+	const dataBridge = document.getElementById('data-bridge');
+	const questionsData = JSON.parse(dataBridge?.getAttribute('data-questions') || '[]');
+
+	let currentQuestions = [];
+	let currentIndex = 0;
+	let scores = {}; // category -> score
+	let categoryTotals = {}; // category -> total questions
+
+	const intro = document.getElementById('quiz-intro');
+	const play = document.getElementById('quiz-play');
+	const results = document.getElementById('quiz-results');
+	const startBtn = document.getElementById('start-quiz');
+	const nextBtn = document.getElementById('next-question');
+	const qText = document.getElementById('quiz-question-text');
+	const qCat = document.getElementById('question-category');
+	const optionsBox = document.getElementById('quiz-options');
+	const feedback = document.getElementById('quiz-feedback');
+	const feedbackText = document.getElementById('feedback-text');
+	const progress = document.getElementById('progress');
+	const counter = document.getElementById('question-counter');
+	const breakdownBox = document.getElementById('results-breakdown');
+
+	function shuffle(array) {
+		return [...array].sort(() => Math.random() - 0.5);
+	}
+
+	function startQuiz() {
+		// Pick exactly 4 questions per category (5 categories * 4 = 20)
+		currentQuestions = [];
+		questionsData.forEach(cat => {
+			scores[cat.category] = 0;
+			categoryTotals[cat.category] = 0;
+			
+			const shuffledCatQs = shuffle(cat.questions).slice(0, 4);
+			shuffledCatQs.forEach(q => {
+				categoryTotals[cat.category]++;
+				currentQuestions.push({
+					...q,
+					category: cat.category,
+					allAnswersInCategory: cat.questions.map(cq => cq.a)
+				});
+			});
+		});
+
+		currentQuestions = shuffle(currentQuestions);
+		currentIndex = 0;
+		
+		intro.classList.add('hidden');
+		play.classList.remove('hidden');
+		showQuestion();
+	}
+
+	function showQuestion() {
+		const q = currentQuestions[currentIndex];
+		qText.textContent = q.q;
+		qCat.textContent = q.category;
+		counter.textContent = `${currentIndex + 1}/20`;
+		progress.style.width = `${(currentIndex / 20) * 100}%`;
+		
+		// Generate options from SAME CATEGORY to be more realistic distractors
+		let distractors = shuffle(q.allAnswersInCategory.filter(a => a !== q.a)).slice(0, 3);
+		// If not enough distractors in category (unlikely), fallback:
+		while(distractors.length < 3) distractors.push("Autre réponse.");
+
+		let options = shuffle([q.a, ...distractors]);
+
+		optionsBox.innerHTML = '';
+		options.forEach(opt => {
+			const btn = document.createElement('button');
+			btn.className = 'option-btn';
+			btn.textContent = opt;
+			btn.onclick = () => checkAnswer(opt, q, btn);
+			optionsBox.appendChild(btn);
+		});
+
+		feedback.classList.add('hidden');
+		optionsBox.style.pointerEvents = 'auto';
+	}
+
+	function checkAnswer(selected, q, btn) {
+		optionsBox.style.pointerEvents = 'none'; // Disable clicking multiple
+		const buttons = document.querySelectorAll('.option-btn');
+
+		if (selected === q.a) {
+			scores[q.category]++;
+			btn.classList.add('correct');
+			feedbackText.innerHTML = "✅ <strong>Bonne réponse.</strong>";
+		} else {
+			btn.classList.add('wrong');
+			buttons.forEach(b => {
+				if (b.textContent === q.a) b.classList.add('correct');
+			});
+			feedbackText.innerHTML = "❌ <strong>Mauvaise réponse.</strong>";
+		}
+
+		feedback.classList.remove('hidden');
+	}
+
+	startBtn.addEventListener('click', startQuiz);
+	nextBtn.addEventListener('click', () => {
+		currentIndex++;
+		if (currentIndex < 20) {
+			showQuestion();
+		} else {
+			showResults();
+		}
+	});
+
+	function showResults() {
+		play.classList.add('hidden');
+		results.classList.remove('hidden');
+		
+		let globalScore = 0;
+		breakdownBox.innerHTML = '';
+
+		Object.keys(scores).forEach(cat => {
+			globalScore += scores[cat];
+			const perc = Math.round((scores[cat] / categoryTotals[cat]) * 100);
+			
+			const row = document.createElement('div');
+			row.className = 'breakdown-row';
+			row.innerHTML = `
+				<div class="bd-label">${cat}</div>
+				<div class="bd-bar-container">
+					<div class="bd-bar" style="width: ${perc}%; background: ${perc > 50 ? '#31c48d' : '#f98080'}"></div>
+				</div>
+				<div class="bd-score">${scores[cat]}/${categoryTotals[cat]}</div>
+			`;
+			breakdownBox.appendChild(row);
+		});
+
+		document.getElementById('final-score').textContent = globalScore;
+		
+		// Save to localStorage
+		saveDiagnostic(scores, globalScore);
+	}
+</script>
+
+<style>
+	.header-small { background: var(--blue); color: white; padding: 1.5rem 0; border-bottom: 3px solid var(--red); }
+	.nav-links { display: flex; justify-content: space-between; align-items: center; }
+	.back-link { color: white; text-decoration: none; font-weight: 700; }
+	.category-tag { background: rgba(255,255,255,0.2); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+
+	.quiz-container { margin: 3rem auto; max-width: 800px !important; min-height: 70vh; }
+	.card { background: white; padding: 3rem; border-radius: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.08); border: 1px solid var(--border-color); }
+	.text-center { text-align: center; }
+	.hidden { display: none !important; }
+
+	.btn-primary { background: var(--blue); color: white; border: none; padding: 1rem 2.5rem; border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 1.1rem; transition: transform 0.2s; box-shadow: 0 4px 12px rgba(0,35,149,0.3); display: inline-block; text-decoration: none;}
+	.btn-primary:hover { transform: translateY(-3px); background: #001d7e; }
+
+	.quiz-header { margin-bottom: 2rem; }
+	.progress-bar { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 1rem; }
+	.progress-fill { background: var(--blue); height: 100%; transition: width 0.4s ease-out; }
+	.header-meta { display: flex; justify-content: space-between; align-items: center; color: #718096; font-weight: 600; font-size: 0.9rem;}
+	.cat-label { background: #edf2f7; padding: 0.2rem 0.8rem; border-radius: 12px; color: #4a5568;}
+
+	.question-box h2 { font-size: 1.6rem; color: #1a202c; margin-bottom: 2rem; line-height: 1.4; }
+
+	.options-grid { display: grid; gap: 1rem; }
+	.option-btn { background: white; border: 2px solid #e2e8f0; padding: 1.25rem; border-radius: 12px; text-align: left; cursor: pointer; font-size: 1rem; font-weight: 500; transition: all 0.2s; line-height: 1.4; }
+	.option-btn:hover { border-color: var(--blue); background: #f0f7ff; }
+	.option-btn.correct { background: #def7ec; border-color: #31c48d; color: #03543f; font-weight: 700; }
+	.option-btn.wrong { background: #fde8e8; border-color: #f98080; color: #9b1c1c; }
+
+	.feedback { margin-top: 2rem; padding: 2rem; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; animation: slideUp 0.3s ease-out; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+	@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+	.feedback p { font-size: 1.1rem; color: #2d3748; margin: 0; }
+
+	.score-circle { width: 140px; height: 140px; border: 8px solid var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 2rem auto; font-size: 3.5rem; font-weight: 900; color: var(--blue); }
+	.score-circle small { font-size: 1.2rem; color: #718096; margin-left: 2px; }
+
+	.results-breakdown { margin: 3rem 0; text-align: left; }
+	.breakdown-row { display: flex; align-items: center; margin-bottom: 1rem; gap: 1rem; }
+	.bd-label { width: 40%; font-weight: 600; color: #4a5568; font-size: 0.9rem; line-height: 1.2; }
+	.bd-bar-container { flex: 1; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
+	.bd-bar { height: 100%; border-radius: 6px; transition: width 1s ease-out; }
+	.bd-score { width: 10%; text-align: right; font-weight: 700; color: #1a202c; }
+
+	.results-actions { margin-top: 2rem; }
+
+	@media (max-width: 640px) {
+		.card { padding: 1.5rem; }
+		.question-box h2 { font-size: 1.3rem; }
+		.breakdown-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+		.bd-label, .bd-score { width: 100%; text-align: left; }
+		.bd-bar-container { width: 100%; }
+	}
+</style>

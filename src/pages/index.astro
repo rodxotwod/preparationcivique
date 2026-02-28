@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import questionsData from '../data/questions.json';
 
 const title = "Préparation Civique - Réussir votre Naturalisation";
 ---
@@ -16,59 +15,46 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 				</div>
 				<h1>Préparation Civique</h1>
 			</div>
-			<p class="subtitle">Votre guide complet pour l'entretien de citoyenneté</p>
+			<p class="subtitle">Votre guide intelligent pour réussir l'entretien de naturalisation française</p>
 		</div>
 	</header>
 
-	<div class="sticky-controls">
-		<div class="container">
-			<div class="search-box">
-				<input type="text" id="global-search" placeholder="🔍 Rechercher une question, un thème (ex: Marianne, 1789, Sénat)..." />
-			</div>
-			
-			<div class="tabs-container">
-				<div class="tabs-scroll" id="tabs-nav">
-					<button class="tab-btn active" data-category="all">Toutes</button>
-					{questionsData.map((category, index) => (
-						<button class="tab-btn" data-category={`cat-${index}`}>{category.category}</button>
-					))}
+	<main class="container main-content">
+		<section class="hero-section">
+			<div class="hero-text">
+				<h2>Préparez-vous de manière scientifique et efficace</h2>
+				<p>L'entretien d'assimilation n'est pas qu'un examen de connaissances, c'est une discussion. Notre plateforme utilise la répétition espacée pour vous aider à mémoriser les valeurs, l'histoire et la culture de la République sans effort.</p>
+				
+				<div class="cta-group" id="auth-cta">
+					<a href={`${import.meta.env.BASE_URL}/diagnostic/`} class="btn-primary" id="main-cta">Évaluer mon niveau maintenant</a>
+					<p class="cta-sub">Test gratuit de 20 questions • 5 minutes</p>
 				</div>
 			</div>
-		</div>
-	</div>
-
-	<main class="container main-content">
-		<div id="no-results" style="display: none; text-align: center; padding: 3rem;">
-			<p>Aucune question ne correspond à votre recherche.</p>
-		</div>
-
-		<div class="questions-sections">
-			{questionsData.map((category, catIndex) => (
-				<section id={`cat-${catIndex}`} class="category-block" data-cat-id={`cat-${catIndex}`}>
-					<h2 class="category-title">{category.category}</h2>
-					<ul class="questions-list">
-						{category.questions.map((item) => (
-							<li class="question-item">
-								<a href={`${import.meta.env.BASE_URL}/question/${item.slug}/`} class="question-link">
-									<span class="q-text">{item.q}</span>
-									<span class="icon">→</span>
-								</a>
-							</li>
-						))}
-					</ul>
-				</section>
-			))}
-		</div>
+			
+			<div class="features-grid">
+				<div class="feature-card">
+					<div class="feature-icon">🎯</div>
+					<h3>Test de positionnement</h3>
+					<p>Découvrez vos points forts et les thèmes (Histoire, Géographie, Valeurs) que vous devez travailler en priorité.</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon">🧠</div>
+					<h3>Répétition espacée</h3>
+					<p>Ne perdez plus de temps à relire ce que vous savez déjà. L'algorithme se concentre sur vos faiblesses.</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon">📈</div>
+					<h3>Progression visible</h3>
+					<p>Suivez votre jauge de préparation et votre série de révisions quotidiennes pour rester motivé jusqu'au jour J.</p>
+				</div>
+			</div>
+		</section>
 	</main>
-
-	<button id="back-to-top" title="Retour en haut">↑</button>
 
 	<footer class="footer">
 		<div class="container">
 			<div class="footer-links">
-				<a href={`${import.meta.env.BASE_URL}/test/`}>Évaluer mon niveau</a>
-				<a href={`${import.meta.env.BASE_URL}/revisions/`}>Révisions rapides</a>
-				<a href={`${import.meta.env.BASE_URL}/simulateur/`}>Simulateur d'entretien</a>
+				<a href={`${import.meta.env.BASE_URL}/library/`}>Toutes les questions (Bibliothèque)</a>
 			</div>
 			<p>&copy; 2026 Préparation Civique - France</p>
 		</div>
@@ -76,81 +62,19 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 </Layout>
 
 <script>
-	const searchInput = document.getElementById('global-search') as HTMLInputElement;
-	const tabBtns = document.querySelectorAll('.tab-btn');
-	const categoryBlocks = document.querySelectorAll('.category-block');
-	const questionItems = document.querySelectorAll('.question-item');
-	const noResults = document.getElementById('no-results');
-	const backToTop = document.getElementById('back-to-top');
+	import { getProfile } from '../utils/store.js';
 
-	// --- Tabs Logic ---
-	tabBtns.forEach(btn => {
-		btn.addEventListener('click', () => {
-			const targetCat = btn.getAttribute('data-category');
-			
-			// Update buttons
-			tabBtns.forEach(b => b.classList.remove('active'));
-			btn.classList.add('active');
-
-			// Filter blocks
-			categoryBlocks.forEach(block => {
-				const blockId = block.getAttribute('data-cat-id');
-				if (targetCat === 'all' || blockId === targetCat) {
-					(block as HTMLElement).style.display = 'block';
-				} else {
-					(block as HTMLElement).style.display = 'none';
-				}
-			});
-
-			// Clear search on tab change
-			if (searchInput.value !== '') {
-				searchInput.value = '';
-				questionItems.forEach(item => (item as HTMLElement).style.display = 'block');
-			}
-		});
-	});
-
-	// --- Search Logic ---
-	searchInput?.addEventListener('input', (e) => {
-		const term = (e.target as HTMLInputElement).value.toLowerCase().trim();
-		let totalMatches = 0;
-
-		// When searching, switch to "All" tab view internally
-		tabBtns.forEach(b => b.classList.remove('active'));
-		tabBtns[0].classList.add('active');
-
-		categoryBlocks.forEach(block => {
-			let sectionHasMatch = false;
-			const items = block.querySelectorAll('.question-item');
-			
-			items.forEach(item => {
-				const text = item.textContent?.toLowerCase() || '';
-				if (text.includes(term)) {
-					(item as HTMLElement).style.display = 'block';
-					sectionHasMatch = true;
-					totalMatches++;
-				} else {
-					(item as HTMLElement).style.display = 'none';
-				}
-			});
-
-			(block as HTMLElement).style.display = sectionHasMatch ? 'block' : 'none';
-		});
-
-		noResults!.style.display = totalMatches === 0 ? 'block' : 'none';
-	});
-
-	// --- Back to Top ---
-	window.addEventListener('scroll', () => {
-		if (window.scrollY > 300) {
-			backToTop!.classList.add('visible');
-		} else {
-			backToTop!.classList.remove('visible');
+	// Client-side check to see if user already has a profile
+	document.addEventListener('DOMContentLoaded', () => {
+		const profile = getProfile();
+		const mainCta = document.getElementById('main-cta') as HTMLAnchorElement;
+		const ctaSub = document.querySelector('.cta-sub') as HTMLElement;
+		
+		if (profile && profile.diagnosticDone) {
+			mainCta.href = `${import.meta.env.BASE_URL}/dashboard/`;
+			mainCta.textContent = "Aller à mon tableau de bord";
+			if (ctaSub) ctaSub.style.display = 'none';
 		}
-	});
-
-	backToTop?.addEventListener('click', () => {
-		window.scrollTo({ top: 0, behavior: 'smooth' });
 	});
 </script>
 
@@ -158,7 +82,7 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 	.header {
 		background: var(--blue);
 		color: white;
-		padding: 3rem 0;
+		padding: 4rem 0;
 		text-align: center;
 		border-bottom: 5px solid var(--red);
 	}
@@ -166,15 +90,15 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		margin-bottom: 1rem;
+		margin-bottom: 1.5rem;
 	}
 	.flag {
 		display: flex;
-		width: 60px;
-		height: 40px;
+		width: 80px;
+		height: 50px;
 		border-radius: 4px;
 		overflow: hidden;
-		box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+		box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 	}
 	.flag span { flex: 1; }
 	.flag .blue { background: #002395; }
@@ -183,158 +107,116 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 	
 	.header h1 {
 		color: white;
-		margin: 1rem 0 0.5rem;
-		font-size: 2.5rem;
+		margin: 1.5rem 0 0.5rem;
+		font-size: 3rem;
 		font-weight: 900;
 		letter-spacing: -0.04em;
 	}
 	.subtitle {
-		font-size: 1.25rem;
+		font-size: 1.5rem;
 		opacity: 0.9;
 		font-weight: 300;
-	}
-
-	.sticky-controls {
-		position: sticky;
-		top: 0;
-		z-index: 1000;
-		background: #f4f7f6; /* Matching page background */
-		padding: 1.5rem 0;
-		border-bottom: 1px solid var(--border-color);
-		box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-	}
-
-	.search-box {
-		margin-bottom: 1.5rem;
-	}
-	#global-search {
-		width: 100%;
-		padding: 1rem 1.5rem;
-		border-radius: 50px;
-		border: 2px solid #cbd5e0;
-		font-size: 1.1rem;
-		outline: none;
-		transition: border-color 0.2s, box-shadow 0.2s;
-		background: white;
-	}
-	#global-search:focus {
-		border-color: var(--blue);
-		box-shadow: 0 0 0 4px rgba(0, 35, 149, 0.1);
-	}
-
-	.tabs-container {
-		display: flex;
-		justify-content: center;
-	}
-	.tabs-scroll {
-		display: flex;
-		gap: 0.5rem;
-		overflow-x: auto;
-		padding-bottom: 0.5rem;
-		scrollbar-width: none;
-		-ms-overflow-style: none;
-	}
-	.tabs-scroll::-webkit-scrollbar { display: none; }
-
-	.tab-btn {
-		background: white;
-		border: 1px solid var(--border-color);
-		padding: 0.6rem 1.25rem;
-		border-radius: 30px;
-		white-space: nowrap;
-		cursor: pointer;
-		font-weight: 600;
-		font-size: 0.9rem;
-		color: #4a5568;
-		transition: all 0.2s;
-	}
-	.tab-btn:hover {
-		background: #edf2f7;
-		color: var(--blue);
-	}
-	.tab-btn.active {
-		background: var(--blue);
-		color: white;
-		border-color: var(--blue);
+		max-width: 600px;
+		margin: 0 auto;
 	}
 
 	.main-content {
-		padding-top: 3rem;
-		min-height: 60vh;
+		padding-top: 4rem;
+		padding-bottom: 4rem;
 	}
 
-	.category-block {
+	.hero-section {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.hero-text {
+		max-width: 800px;
 		margin-bottom: 4rem;
 	}
-	.category-title {
-		font-size: 1.75rem;
+
+	.hero-text h2 {
+		font-size: 2.25rem;
 		color: #1a202c;
 		margin-bottom: 1.5rem;
-		padding-left: 1rem;
-		border-left: 6px solid var(--blue);
 	}
 
-	.questions-list {
-		list-style: none;
-		padding: 0;
-		background: white;
-		border-radius: 12px;
-		border: 1px solid var(--border-color);
-		overflow: hidden;
-		box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+	.hero-text p {
+		font-size: 1.2rem;
+		color: #4a5568;
+		line-height: 1.6;
+		margin-bottom: 2.5rem;
 	}
-	.question-item {
-		border-bottom: 1px solid var(--light-gray);
-	}
-	.question-item:last-child { border-bottom: none; }
-	
-	.question-link {
+
+	.cta-group {
 		display: flex;
-		justify-content: space-between;
+		flex-direction: column;
 		align-items: center;
-		padding: 1.25rem 1.5rem;
-		text-decoration: none;
-		color: #2d3748;
-		font-weight: 500;
-		transition: background 0.2s;
-	}
-	.question-link:hover {
-		background: #f8fafc;
-	}
-	.question-link:hover .q-text { color: var(--blue); }
-	.question-link:hover .icon { transform: translateX(5px); color: var(--blue); }
-	
-	.icon {
-		color: #a0aec0;
-		transition: transform 0.2s;
-		font-weight: bold;
+		gap: 1rem;
 	}
 
-	#back-to-top {
-		position: fixed;
-		bottom: 2rem;
-		right: 2rem;
+	.btn-primary {
 		background: var(--red);
 		color: white;
-		border: none;
-		width: 50px;
-		height: 50px;
-		border-radius: 50%;
-		font-size: 1.5rem;
-		cursor: pointer;
-		box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-		opacity: 0;
-		visibility: hidden;
-		transition: all 0.3s;
-		z-index: 999;
+		padding: 1.25rem 2.5rem;
+		border-radius: 50px;
+		font-weight: 800;
+		font-size: 1.25rem;
+		text-decoration: none;
+		transition: transform 0.2s, box-shadow 0.2s;
+		box-shadow: 0 10px 25px rgba(237, 41, 57, 0.3);
+		display: inline-block;
 	}
-	#back-to-top.visible {
-		opacity: 1;
-		visibility: visible;
-	}
-	#back-to-top:hover {
-		transform: translateY(-5px);
+
+	.btn-primary:hover {
+		transform: translateY(-3px);
+		box-shadow: 0 15px 35px rgba(237, 41, 57, 0.4);
 		background: #c53030;
+	}
+
+	.cta-sub {
+		color: #718096;
+		font-size: 0.95rem;
+		font-weight: 500;
+	}
+
+	.features-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		gap: 2rem;
+		width: 100%;
+	}
+
+	.feature-card {
+		background: white;
+		padding: 2.5rem 2rem;
+		border-radius: 20px;
+		box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+		border: 1px solid var(--border-color);
+		text-align: left;
+		transition: transform 0.3s;
+	}
+
+	.feature-card:hover {
+		transform: translateY(-5px);
+	}
+
+	.feature-icon {
+		font-size: 3rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.feature-card h3 {
+		font-size: 1.5rem;
+		color: #1a202c;
+		margin-bottom: 1rem;
+	}
+
+	.feature-card p {
+		color: #4a5568;
+		line-height: 1.5;
 	}
 
 	.footer {
@@ -342,7 +224,6 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 		color: #a0aec0;
 		padding: 4rem 0;
 		text-align: center;
-		margin-top: 5rem;
 	}
 	.footer-links {
 		display: flex;
@@ -357,10 +238,9 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 	}
 	.footer-links a:hover { text-decoration: underline; }
 
-	@media (max-width: 640px) {
-		.header h1 { font-size: 1.75rem; }
-		.tabs-container { justify-content: flex-start; }
-		.tabs-scroll { padding-left: 1rem; }
-		.sticky-controls { padding: 1rem 0; }
+	@media (max-width: 768px) {
+		.header h1 { font-size: 2rem; }
+		.hero-text h2 { font-size: 1.75rem; }
+		.btn-primary { padding: 1rem 2rem; font-size: 1.1rem; }
 	}
 </style>
