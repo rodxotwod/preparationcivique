@@ -17,45 +17,69 @@ export async function getStaticPaths() {
 
 const { question, category } = Astro.props;
 
+// Better seed for pollinations
 const seed = question.slug.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 const promptBase = `French civic exam, ${question.q}, France, patriotic, highly detailed, artistic illustration, style neo banana 2`;
-const imagePrompt = encodeURIComponent(promptBase);
-const imageUrl = `https://pollinations.ai/p/${imagePrompt}?width=1024&height=576&seed=${seed}&nologo=true`;
+const imageUrl = `https://pollinations.ai/p/${encodeURIComponent(promptBase)}?width=1024&height=576&seed=${seed}&nologo=true`;
+
+const homeUrl = `${import.meta.env.BASE_URL}/`;
 ---
 
 <Layout title={`${question.q} - Préparation Civique`}>
 	<header class="header-small">
 		<div class="container">
-			<a href="../../" class="back-link">← Retour au sommaire</a>
-			<p class="category-tag">{category}</p>
+			<nav class="nav-links">
+				<a href={homeUrl} class="back-link">← Retour au sommaire</a>
+				<span class="category-tag">{category}</span>
+			</nav>
 		</div>
 	</header>
 
 	<main class="container">
-		<article class="question-article">
-			<h1 class="question-title">{question.q}</h1>
-			
-			<div class="image-container" id="illustration-box">
-				<img 
-					id="illustration-img"
-					src={imageUrl} 
-					alt={`Illustration pour : ${question.q}`} 
-					width="1024" 
-					height="576"
-					onerror="this.parentElement.style.display='none';"
-				/>
+		<article class="question-container">
+			<div class="question-header">
+				<h1 class="question-title">{question.q}</h1>
 			</div>
 
-			<section class="answer-section">
-				<h2>Réponse officielle</h2>
-				<p class="main-answer">{question.a}</p>
-			</section>
+			<div class="image-box" id="image-box">
+				<img 
+					id="question-image"
+					src={imageUrl} 
+					alt="" 
+					width="1024" 
+					height="576"
+					class="fade-in"
+				/>
+				<div class="image-loader" id="image-loader">
+					<div class="spinner"></div>
+					<p>Génération de l'image...</p>
+				</div>
+			</div>
 
-			<section class="details-section">
-				<h2>Pour aller plus loin</h2>
-				<p class="details-text">{question.details}</p>
-			</section>
+			<div class="reveal-container">
+				<button id="reveal-btn" class="reveal-btn">Afficher la réponse</button>
+				
+				<div id="answer-content" class="answer-content hidden">
+					<div class="answer-section">
+						<h2>Réponse officielle</h2>
+						<div class="answer-box">
+							<p>{question.a}</p>
+						</div>
+					</div>
+
+					<div class="details-section">
+						<h2>Contexte et Explications</h2>
+						<div class="details-box">
+							<p>{question.details}</p>
+						</div>
+					</div>
+				</div>
+			</div>
 		</article>
+
+		<div class="navigation-footer">
+			<a href={homeUrl} class="btn-secondary">Revenir à la liste</a>
+		</div>
 	</main>
 
 	<footer class="footer">
@@ -65,114 +89,210 @@ const imageUrl = `https://pollinations.ai/p/${imagePrompt}?width=1024&height=576
 	</footer>
 </Layout>
 
+<script>
+	const revealBtn = document.getElementById('reveal-btn');
+	const answerContent = document.getElementById('answer-content');
+	const qImg = document.getElementById('question-image') as HTMLImageElement;
+	const imageBox = document.getElementById('image-box');
+	const imageLoader = document.getElementById('image-loader');
+
+	// --- Reveal Logic ---
+	revealBtn?.addEventListener('click', () => {
+		answerContent?.classList.remove('hidden');
+		revealBtn.style.display = 'none';
+		
+		// Scroll to answer smoothly
+		setTimeout(() => {
+			answerContent?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}, 100);
+	});
+
+	// --- Image Loading Logic ---
+	if (qImg) {
+		qImg.onload = () => {
+			imageLoader!.style.display = 'none';
+			qImg.classList.add('loaded');
+		};
+
+		qImg.onerror = () => {
+			// If image fails, hide the whole box to keep UI clean
+			imageBox!.style.display = 'none';
+		};
+	}
+</script>
+
 <style>
 	.header-small {
 		background: var(--blue);
 		color: white;
 		padding: 1.5rem 0;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+		border-bottom: 3px solid var(--red);
+	}
+	.nav-links {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 	}
 	.back-link {
 		color: white;
 		text-decoration: none;
-		font-weight: 600;
-		display: inline-block;
-		margin-bottom: 0.5rem;
-		transition: opacity 0.2s;
+		font-weight: 700;
+		transition: transform 0.2s;
 	}
-	.back-link:hover {
-		opacity: 0.8;
-		text-decoration: underline;
-	}
+	.back-link:hover { transform: translateX(-5px); text-decoration: underline; }
 	.category-tag {
-		font-size: 0.9rem;
-		opacity: 0.9;
-		margin: 0;
+		background: rgba(255, 255, 255, 0.2);
+		padding: 0.4rem 1rem;
+		border-radius: 20px;
+		font-size: 0.85rem;
+		font-weight: 600;
 		text-transform: uppercase;
-		letter-spacing: 0.05em;
 	}
 
-	.question-article {
-		background: var(--card-bg);
-		padding: 2.5rem;
-		border-radius: 12px;
-		margin: 2rem 0;
-		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+	.question-container {
+		background: white;
+		margin: 3rem 0;
+		border-radius: 20px;
+		box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 		border: 1px solid var(--border-color);
-	}
-
-	.question-title {
-		font-size: 2.25rem;
-		color: var(--blue);
-		margin-bottom: 1.5rem;
-		line-height: 1.2;
-	}
-
-	.image-container {
-		width: 100%;
-		border-radius: 8px;
 		overflow: hidden;
-		margin-bottom: 2rem;
-		background: #edf2f7;
-		aspect-ratio: 16 / 9;
-		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 	}
-	
-	.image-container img {
+
+	.question-header {
+		padding: 3rem 3rem 2rem;
+		text-align: center;
+	}
+	.question-title {
+		font-size: 2.5rem;
+		color: #1a202c;
+		margin: 0;
+		line-height: 1.2;
+		letter-spacing: -0.02em;
+	}
+
+	.image-box {
+		width: 100%;
+		aspect-ratio: 16/9;
+		background: #f1f5f9;
+		position: relative;
+		overflow: hidden;
+		border-top: 1px solid var(--border-color);
+		border-bottom: 1px solid var(--border-color);
+	}
+	.image-box img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		display: block;
+		opacity: 0;
+		transition: opacity 1s;
+	}
+	.image-box img.loaded { opacity: 1; }
+
+	.image-loader {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		color: #64748b;
+	}
+	.spinner {
+		width: 40px;
+		height: 40px;
+		border: 4px solid #e2e8f0;
+		border-top-color: var(--blue);
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+		margin-bottom: 1rem;
+	}
+	@keyframes spin { to { transform: rotate(360deg); } }
+
+	.reveal-container {
+		padding: 3rem;
+		text-align: center;
+	}
+	.reveal-btn {
+		background: var(--blue);
+		color: white;
+		border: none;
+		padding: 1.25rem 2.5rem;
+		font-size: 1.25rem;
+		font-weight: 700;
+		border-radius: 50px;
+		cursor: pointer;
+		box-shadow: 0 4px 15px rgba(0, 35, 149, 0.3);
+		transition: all 0.2s;
+	}
+	.reveal-btn:hover {
+		transform: translateY(-3px);
+		box-shadow: 0 6px 20px rgba(0, 35, 149, 0.4);
+		background: #001d7e;
 	}
 
-	.answer-section, .details-section {
-		margin-bottom: 2rem;
-	}
+	.answer-content.hidden { display: none; }
+	.answer-content { animation: fadeIn 0.5s ease-out; text-align: left; }
+	@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
 	.answer-section h2, .details-section h2 {
-		font-size: 1.5rem;
-		color: var(--text-color);
-		margin-bottom: 1rem;
-		border-bottom: 2px solid var(--light-gray);
-		padding-bottom: 0.5rem;
-	}
-
-	.main-answer {
 		font-size: 1.25rem;
-		font-weight: 500;
-		color: #2d3748;
-		padding: 1.5rem;
-		background: #ebf8ff;
-		border-left: 4px solid var(--accent-blue);
-		border-radius: 0 8px 8px 0;
-		margin: 0;
+		text-transform: uppercase;
+		color: #718096;
+		margin-bottom: 1rem;
+		letter-spacing: 0.1em;
 	}
-
-	.details-text {
-		font-size: 1.1rem;
-		line-height: 1.7;
+	.answer-box {
+		background: #f0f7ff;
+		padding: 2rem;
+		border-radius: 12px;
+		border-left: 6px solid var(--blue);
+		margin-bottom: 3rem;
+	}
+	.answer-box p {
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: #1a202c;
+		margin: 0;
+		line-height: 1.4;
+	}
+	.details-box {
+		line-height: 1.8;
+		font-size: 1.15rem;
 		color: #4a5568;
 	}
 
-	.footer {
+	.navigation-footer {
 		text-align: center;
-		padding: 3rem 0;
-		margin-top: 2rem;
-		border-top: 1px solid var(--border-color);
+		margin-bottom: 5rem;
+	}
+	.btn-secondary {
+		display: inline-block;
+		text-decoration: none;
+		background: white;
+		color: #4a5568;
+		padding: 0.75rem 2rem;
+		border-radius: 30px;
+		border: 1px solid var(--border-color);
+		font-weight: 600;
+		transition: all 0.2s;
+	}
+	.btn-secondary:hover { background: #f8fafc; border-color: #cbd5e0; }
+
+	.footer {
+		background: #1a202c;
 		color: #718096;
-		font-size: 0.875rem;
+		padding: 3rem 0;
+		text-align: center;
 	}
 
-	@media (max-width: 600px) {
-		.question-article {
-			padding: 1.5rem;
-		}
-		.question-title {
-			font-size: 1.75rem;
-		}
-		.main-answer {
-			font-size: 1.1rem;
-			padding: 1rem;
-		}
+	@media (max-width: 640px) {
+		.question-header { padding: 2rem 1.5rem; }
+		.question-title { font-size: 1.75rem; }
+		.reveal-container { padding: 2rem 1.5rem; }
+		.answer-box { padding: 1.5rem; }
+		.answer-box p { font-size: 1.2rem; }
 	}
 </style>

@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import questionsData from '../data/questions.json';
 
-const title = "Préparation Civique - Examen de Citoyenneté Française";
+const title = "Préparation Civique - Réussir votre Naturalisation";
 ---
 
 <Layout title={title}>
@@ -16,164 +16,351 @@ const title = "Préparation Civique - Examen de Citoyenneté Française";
 				</div>
 				<h1>Préparation Civique</h1>
 			</div>
-			<p class="subtitle">Réussir votre entretien de naturalisation</p>
+			<p class="subtitle">Votre guide complet pour l'entretien de citoyenneté</p>
 		</div>
 	</header>
 
-	<div class="layout-wrapper container">
-		<aside class="sidebar">
-			<nav class="sticky-nav">
-				<h3>Sommaire</h3>
-				<ul>
+	<div class="sticky-controls">
+		<div class="container">
+			<div class="search-box">
+				<input type="text" id="global-search" placeholder="🔍 Rechercher une question, un thème (ex: Marianne, 1789, Sénat)..." />
+			</div>
+			
+			<div class="tabs-container">
+				<div class="tabs-scroll" id="tabs-nav">
+					<button class="tab-btn active" data-category="all">Toutes</button>
 					{questionsData.map((category, index) => (
-						<li>
-							<a href={`#category-${index}`}>{category.category}</a>
-						</li>
+						<button class="tab-btn" data-category={`cat-${index}`}>{category.category}</button>
 					))}
-				</ul>
-			</nav>
-		</aside>
+				</div>
+			</div>
+		</div>
+	</div>
 
-		<main class="content">
+	<main class="container main-content">
+		<div id="no-results" style="display: none; text-align: center; padding: 3rem;">
+			<p>Aucune question ne correspond à votre recherche.</p>
+		</div>
+
+		<div class="questions-sections">
 			{questionsData.map((category, catIndex) => (
-				<section id={`category-${catIndex}`} class="category-section">
+				<section id={`cat-${catIndex}`} class="category-block" data-cat-id={`cat-${catIndex}`}>
 					<h2 class="category-title">{category.category}</h2>
 					<ul class="questions-list">
 						{category.questions.map((item) => (
-							<li>
-								<a href={`question/${item.slug}`} class="question-link">
-									{item.q}
+							<li class="question-item">
+								<a href={`${import.meta.env.BASE_URL}/question/${item.slug}/`} class="question-link">
+									<span class="q-text">{item.q}</span>
+									<span class="icon">→</span>
 								</a>
 							</li>
 						))}
 					</ul>
 				</section>
 			))}
-		</main>
-	</div>
+		</div>
+	</main>
+
+	<button id="back-to-top" title="Retour en haut">↑</button>
 
 	<footer class="footer">
 		<div class="container">
-			<p>&copy; 2026 Préparation Civique - Ressources pour la Citoyenneté Française</p>
+			<div class="footer-links">
+				<a href="#">Évaluer mon niveau</a>
+				<a href="#">Révisions rapides</a>
+				<a href="#">Simulateur d'entretien</a>
+			</div>
+			<p>&copy; 2026 Préparation Civique - France</p>
 		</div>
 	</footer>
 </Layout>
+
+<script>
+	const searchInput = document.getElementById('global-search') as HTMLInputElement;
+	const tabBtns = document.querySelectorAll('.tab-btn');
+	const categoryBlocks = document.querySelectorAll('.category-block');
+	const questionItems = document.querySelectorAll('.question-item');
+	const noResults = document.getElementById('no-results');
+	const backToTop = document.getElementById('back-to-top');
+
+	// --- Tabs Logic ---
+	tabBtns.forEach(btn => {
+		btn.addEventListener('click', () => {
+			const targetCat = btn.getAttribute('data-category');
+			
+			// Update buttons
+			tabBtns.forEach(b => b.classList.remove('active'));
+			btn.classList.add('active');
+
+			// Filter blocks
+			categoryBlocks.forEach(block => {
+				const blockId = block.getAttribute('data-cat-id');
+				if (targetCat === 'all' || blockId === targetCat) {
+					(block as HTMLElement).style.display = 'block';
+				} else {
+					(block as HTMLElement).style.display = 'none';
+				}
+			});
+
+			// Clear search on tab change
+			if (searchInput.value !== '') {
+				searchInput.value = '';
+				questionItems.forEach(item => (item as HTMLElement).style.display = 'block');
+			}
+		});
+	});
+
+	// --- Search Logic ---
+	searchInput?.addEventListener('input', (e) => {
+		const term = (e.target as HTMLInputElement).value.toLowerCase().trim();
+		let totalMatches = 0;
+
+		// When searching, switch to "All" tab view internally
+		tabBtns.forEach(b => b.classList.remove('active'));
+		tabBtns[0].classList.add('active');
+
+		categoryBlocks.forEach(block => {
+			let sectionHasMatch = false;
+			const items = block.querySelectorAll('.question-item');
+			
+			items.forEach(item => {
+				const text = item.textContent?.toLowerCase() || '';
+				if (text.includes(term)) {
+					(item as HTMLElement).style.display = 'block';
+					sectionHasMatch = true;
+					totalMatches++;
+				} else {
+					(item as HTMLElement).style.display = 'none';
+				}
+			});
+
+			(block as HTMLElement).style.display = sectionHasMatch ? 'block' : 'none';
+		});
+
+		noResults!.style.display = totalMatches === 0 ? 'block' : 'none';
+	});
+
+	// --- Back to Top ---
+	window.addEventListener('scroll', () => {
+		if (window.scrollY > 300) {
+			backToTop!.classList.add('visible');
+		} else {
+			backToTop!.classList.remove('visible');
+		}
+	});
+
+	backToTop?.addEventListener('click', () => {
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	});
+</script>
 
 <style>
 	.header {
 		background: var(--blue);
 		color: white;
-		padding: 2rem 0;
-		border-bottom: 4px solid var(--red);
+		padding: 3rem 0;
+		text-align: center;
+		border-bottom: 5px solid var(--red);
 	}
 	.logo {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
-		gap: 1.5rem;
-	}
-	.header h1 {
-		color: white;
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 800;
-		letter-spacing: -0.02em;
-	}
-	.subtitle {
-		margin: 0.5rem 0 0;
-		font-size: 1.1rem;
-		opacity: 0.9;
+		margin-bottom: 1rem;
 	}
 	.flag {
 		display: flex;
-		width: 45px;
-		height: 30px;
-		border-radius: 2px;
+		width: 60px;
+		height: 40px;
+		border-radius: 4px;
 		overflow: hidden;
+		box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 	}
-	.flag span { flex: 1; height: 100%; }
+	.flag span { flex: 1; }
 	.flag .blue { background: #002395; }
 	.flag .white { background: #ffffff; }
 	.flag .red { background: #ed2939; }
-
-	.layout-wrapper {
-		display: grid;
-		grid-template-columns: 280px 1fr;
-		gap: 3rem;
-		margin-top: 3rem;
+	
+	.header h1 {
+		color: white;
+		margin: 1rem 0 0.5rem;
+		font-size: 2.5rem;
+		font-weight: 900;
+		letter-spacing: -0.04em;
+	}
+	.subtitle {
+		font-size: 1.25rem;
+		opacity: 0.9;
+		font-weight: 300;
 	}
 
-	.sticky-nav {
+	.sticky-controls {
 		position: sticky;
-		top: 2rem;
-		background: white;
-		padding: 1.5rem;
-		border-radius: 8px;
-		border: 1px solid var(--border-color);
+		top: 0;
+		z-index: 1000;
+		background: #f4f7f6; /* Matching page background */
+		padding: 1.5rem 0;
+		border-bottom: 1px solid var(--border-color);
+		box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 	}
-	.sticky-nav h3 {
-		font-size: 1rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: #718096;
-		margin-bottom: 1rem;
-		padding-bottom: 0.5rem;
-		border-bottom: 1px solid var(--light-gray);
-	}
-	.sticky-nav ul {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-	.sticky-nav li { margin-bottom: 0.75rem; }
-	.sticky-nav a {
-		text-decoration: none;
-		color: var(--text-color);
-		font-size: 0.95rem;
-		transition: color 0.2s;
-		display: block;
-		line-height: 1.4;
-	}
-	.sticky-nav a:hover { color: var(--accent-blue); }
 
-	.category-section { margin-bottom: 4rem; }
-	.category-title {
-		font-size: 1.5rem;
-		color: var(--blue);
+	.search-box {
 		margin-bottom: 1.5rem;
-		padding-bottom: 0.75rem;
-		border-bottom: 2px solid var(--light-gray);
+	}
+	#global-search {
+		width: 100%;
+		padding: 1rem 1.5rem;
+		border-radius: 50px;
+		border: 2px solid #cbd5e0;
+		font-size: 1.1rem;
+		outline: none;
+		transition: border-color 0.2s, box-shadow 0.2s;
+		background: white;
+	}
+	#global-search:focus {
+		border-color: var(--blue);
+		box-shadow: 0 0 0 4px rgba(0, 35, 149, 0.1);
+	}
+
+	.tabs-container {
+		display: flex;
+		justify-content: center;
+	}
+	.tabs-scroll {
+		display: flex;
+		gap: 0.5rem;
+		overflow-x: auto;
+		padding-bottom: 0.5rem;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+	}
+	.tabs-scroll::-webkit-scrollbar { display: none; }
+
+	.tab-btn {
+		background: white;
+		border: 1px solid var(--border-color);
+		padding: 0.6rem 1.25rem;
+		border-radius: 30px;
+		white-space: nowrap;
+		cursor: pointer;
+		font-weight: 600;
+		font-size: 0.9rem;
+		color: #4a5568;
+		transition: all 0.2s;
+	}
+	.tab-btn:hover {
+		background: #edf2f7;
+		color: var(--blue);
+	}
+	.tab-btn.active {
+		background: var(--blue);
+		color: white;
+		border-color: var(--blue);
+	}
+
+	.main-content {
+		padding-top: 3rem;
+		min-height: 60vh;
+	}
+
+	.category-block {
+		margin-bottom: 4rem;
+	}
+	.category-title {
+		font-size: 1.75rem;
+		color: #1a202c;
+		margin-bottom: 1.5rem;
+		padding-left: 1rem;
+		border-left: 6px solid var(--blue);
 	}
 
 	.questions-list {
 		list-style: none;
 		padding: 0;
+		background: white;
+		border-radius: 12px;
+		border: 1px solid var(--border-color);
+		overflow: hidden;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 	}
-	.questions-list li {
-		padding: 0.75rem 0;
-		border-bottom: 1px solid #edf2f7;
+	.question-item {
+		border-bottom: 1px solid var(--light-gray);
 	}
+	.question-item:last-child { border-bottom: none; }
+	
 	.question-link {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 1.25rem 1.5rem;
 		text-decoration: none;
 		color: #2d3748;
-		font-size: 1.1rem;
 		font-weight: 500;
-		transition: all 0.2s;
-		display: block;
+		transition: background 0.2s;
 	}
 	.question-link:hover {
-		color: var(--accent-blue);
-		transform: translateX(5px);
+		background: #f8fafc;
+	}
+	.question-link:hover .q-text { color: var(--blue); }
+	.question-link:hover .icon { transform: translateX(5px); color: var(--blue); }
+	
+	.icon {
+		color: #a0aec0;
+		transition: transform 0.2s;
+		font-weight: bold;
+	}
+
+	#back-to-top {
+		position: fixed;
+		bottom: 2rem;
+		right: 2rem;
+		background: var(--red);
+		color: white;
+		border: none;
+		width: 50px;
+		height: 50px;
+		border-radius: 50%;
+		font-size: 1.5rem;
+		cursor: pointer;
+		box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+		opacity: 0;
+		visibility: hidden;
+		transition: all 0.3s;
+		z-index: 999;
+	}
+	#back-to-top.visible {
+		opacity: 1;
+		visibility: visible;
+	}
+	#back-to-top:hover {
+		transform: translateY(-5px);
+		background: #c53030;
 	}
 
 	.footer {
-		text-align: center;
-		padding: 4rem 0;
+		background: #1a202c;
 		color: #a0aec0;
-		font-size: 0.9rem;
+		padding: 4rem 0;
+		text-align: center;
+		margin-top: 5rem;
 	}
+	.footer-links {
+		display: flex;
+		justify-content: center;
+		gap: 2rem;
+		margin-bottom: 2rem;
+	}
+	.footer-links a {
+		color: white;
+		text-decoration: none;
+		font-weight: 600;
+	}
+	.footer-links a:hover { text-decoration: underline; }
 
-	@media (max-width: 900px) {
-		.layout-wrapper { grid-template-columns: 1fr; }
-		.sidebar { display: none; }
+	@media (max-width: 640px) {
+		.header h1 { font-size: 1.75rem; }
+		.tabs-container { justify-content: flex-start; }
+		.tabs-scroll { padding-left: 1rem; }
+		.sticky-controls { padding: 1rem 0; }
 	}
 </style>
