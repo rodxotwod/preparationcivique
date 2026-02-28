@@ -1,0 +1,180 @@
+---
+import Layout from '../layouts/Layout.astro';
+import questionsData from '../data/questions.json';
+
+const title = "Révisions Rapides - Préparation Civique";
+const homeUrl = `${import.meta.env.BASE_URL}/`;
+---
+
+<Layout title={title}>
+	<header class="header-small">
+		<div class="container">
+			<nav class="nav-links">
+				<a href={homeUrl} class="back-link">← Retour au sommaire</a>
+				<span class="category-tag">Fiches de Révision</span>
+			</nav>
+		</div>
+	</header>
+
+	<main class="container revisions-container">
+		<div class="intro-box">
+			<h1>L'Essentiel à Savoir</h1>
+			<p>Passez en revue les points clés rapidement pour consolider votre mémoire.</p>
+		</div>
+
+		<div class="flashcards-section">
+			<div id="flashcard" class="flashcard">
+				<div class="card-inner">
+					<div class="card-front">
+						<span class="category-label" id="card-cat">Catégorie</span>
+						<h3 id="card-q">Question ici ?</h3>
+						<p class="hint">Cliquez pour voir la réponse</p>
+					</div>
+					<div class="card-back">
+						<h3>La Réponse</h3>
+						<p id="card-a">Réponse ici.</p>
+						<p class="hint">Cliquez pour revenir à la question</p>
+					</div>
+				</div>
+			</div>
+			
+			<div class="card-controls">
+				<button id="prev-card" class="btn-secondary">Précédent</button>
+				<span id="card-index">1 / 191</span>
+				<button id="next-card" class="btn-secondary">Suivant</button>
+			</div>
+			
+			<div class="shuffle-box">
+				<button id="shuffle-btn" class="btn-primary">Mélanger les cartes</button>
+			</div>
+		</div>
+
+		<div class="quick-list">
+			<h2>Toutes les fiches</h2>
+			<div class="categories-accordion">
+				{questionsData.map((category, index) => (
+					<details class="category-details">
+						<summary>{category.category}</summary>
+						<div class="questions-mini-list">
+							{category.questions.map(q => (
+								<div class="mini-card">
+									<strong>{q.q}</strong>
+									<p>{q.a}</p>
+								</div>
+							))}
+						</div>
+					</details>
+				))}
+			</div>
+		</div>
+	</main>
+
+	<footer class="footer">
+		<div class="container">
+			<p>&copy; 2026 Préparation Civique</p>
+		</div>
+	</footer>
+</Layout>
+
+<script define:vars={{ questionsData }}>
+	const allQuestions = questionsData.flatMap(c => c.questions.map(q => ({...q, category: c.category})));
+	let flashcards = [...allQuestions];
+	let currentIndex = 0;
+
+	const card = document.getElementById('flashcard');
+	const cardQ = document.getElementById('card-q');
+	const cardA = document.getElementById('card-a');
+	const cardCat = document.getElementById('card-cat');
+	const cardIndex = document.getElementById('card-index');
+	const nextBtn = document.getElementById('next-card');
+	const prevBtn = document.getElementById('prev-card');
+	const shuffleBtn = document.getElementById('shuffle-btn');
+
+	function updateCard() {
+		const q = flashcards[currentIndex];
+		cardQ.textContent = q.q;
+		cardA.textContent = q.a;
+		cardCat.textContent = q.category;
+		cardIndex.textContent = `${currentIndex + 1} / ${flashcards.length}`;
+		card.classList.remove('flipped');
+	}
+
+	card.addEventListener('click', () => {
+		card.classList.toggle('flipped');
+	});
+
+	nextBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		currentIndex = (currentIndex + 1) % flashcards.length;
+		updateCard();
+	});
+
+	prevBtn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		currentIndex = (currentIndex - 1 + flashcards.length) % flashcards.length;
+		updateCard();
+	});
+
+	shuffleBtn.addEventListener('click', () => {
+		flashcards = flashcards.sort(() => Math.random() - 0.5);
+		currentIndex = 0;
+		updateCard();
+	});
+
+	updateCard();
+</script>
+
+<style>
+	.header-small { background: var(--blue); color: white; padding: 1.5rem 0; border-bottom: 3px solid var(--red); }
+	.nav-links { display: flex; justify-content: space-between; align-items: center; }
+	.back-link { color: white; text-decoration: none; font-weight: 700; }
+	.category-tag { background: rgba(255,255,255,0.2); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+
+	.revisions-container { margin: 3rem auto; }
+	.intro-box { text-align: center; margin-bottom: 3rem; }
+	.intro-box h1 { font-size: 2.5rem; color: #1a202c; }
+
+	/* Flashcards Styling */
+	.flashcards-section { max-width: 600px; margin: 0 auto 5rem; }
+	.flashcard { height: 350px; perspective: 1000px; cursor: pointer; }
+	.card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+	.flashcard.flipped .card-inner { transform: rotateY(180deg); }
+	
+	.card-front, .card-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; padding: 2.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 2px solid var(--border-color); }
+	.card-front { background: white; color: #1a202c; }
+	.card-back { background: var(--blue); color: white; transform: rotateY(180deg); }
+
+	.category-label { position: absolute; top: 1.5rem; left: 1.5rem; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--blue); border: 1px solid var(--blue); padding: 0.25rem 0.5rem; border-radius: 4px; }
+	.card-front h3 { font-size: 1.75rem; margin-bottom: 1.5rem; }
+	.card-back h3 { font-size: 1rem; opacity: 0.8; text-transform: uppercase; margin-bottom: 1rem; }
+	.card-back p { font-size: 1.5rem; font-weight: 600; line-height: 1.4; }
+	.hint { font-size: 0.85rem; opacity: 0.6; position: absolute; bottom: 1.5rem; width: calc(100% - 3rem); text-align: center; }
+
+	.card-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding: 0 1rem; }
+	#card-index { font-weight: 700; color: #4a5568; }
+	.btn-secondary { background: white; border: 2px solid #e2e8f0; padding: 0.6rem 1.25rem; border-radius: 10px; cursor: pointer; font-weight: 600; transition: border-color 0.2s; }
+	.btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
+	
+	.shuffle-box { text-align: center; margin-top: 1.5rem; }
+	.btn-primary { background: #1a202c; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+	.btn-primary:hover { background: var(--blue); }
+
+	/* List Styling */
+	.quick-list h2 { margin-bottom: 2rem; font-size: 2rem; color: #1a202c; border-bottom: 4px solid var(--red); display: inline-block; padding-bottom: 0.5rem; }
+	.category-details { background: white; border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 1rem; overflow: hidden; }
+	.category-details summary { padding: 1.25rem; font-weight: 700; font-size: 1.15rem; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+	.category-details summary:hover { background: #f8fafc; }
+	.category-details summary::after { content: '▼'; font-size: 0.8rem; color: var(--blue); transition: transform 0.2s; }
+	.category-details[open] summary::after { transform: rotate(180deg); }
+	
+	.questions-mini-list { padding: 1rem; background: #f8fafc; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+	.mini-card { background: white; padding: 1.25rem; border-radius: 8px; border: 1px solid #e2e8f0; }
+	.mini-card strong { display: block; margin-bottom: 0.5rem; color: var(--blue); }
+	.mini-card p { font-size: 0.95rem; color: #4a5568; line-height: 1.5; }
+
+	@media (max-width: 640px) {
+		.flashcard { height: 400px; }
+		.card-front h3, .card-back p { font-size: 1.2rem; }
+		.questions-mini-list { grid-template-columns: 1fr; }
+	}
+</style>

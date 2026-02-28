@@ -1,0 +1,166 @@
+---
+import Layout from '../layouts/Layout.astro';
+import questionsData from '../data/questions.json';
+
+const title = "Simulateur d'Entretien - Préparation Civique";
+const homeUrl = `${import.meta.env.BASE_URL}/`;
+---
+
+<Layout title={title}>
+	<header class="header-small">
+		<div class="container">
+			<nav class="nav-links">
+				<a href={homeUrl} class="back-link">← Retour au sommaire</a>
+				<span class="category-tag">Mode Simulateur</span>
+			</nav>
+		</div>
+	</header>
+
+	<main class="container simulator-container">
+		<div id="sim-intro" class="card text-center">
+			<div class="sim-icon">🇫🇷</div>
+			<h1>Simulateur d'entretien</h1>
+			<p>Plongez-vous dans les conditions réelles de l'entretien de naturalisation. L'agent vous posera des questions une par une. Répondez à haute voix avant d'afficher la réponse correcte.</p>
+			<button id="start-sim" class="btn-primary">Commencer la simulation</button>
+		</div>
+
+		<div id="sim-play" class="card hidden">
+			<div class="sim-meta">
+				<span id="sim-counter">Question 1/15</span>
+				<div class="progress-bar"><div id="progress" class="progress-fill"></div></div>
+			</div>
+			
+			<div class="sim-question">
+				<p class="agent-name">Agent de la Préfecture :</p>
+				<h2 id="sim-q-text">Veuillez nous expliquer le principe de laïcité...</h2>
+			</div>
+
+			<div class="sim-actions">
+				<button id="reveal-sim" class="btn-reveal">Afficher la réponse</button>
+				
+				<div id="sim-answer" class="hidden answer-box">
+					<p id="sim-a-text">Réponse ici...</p>
+					<button id="next-sim" class="btn-primary">Question Suivante</button>
+				</div>
+			</div>
+		</div>
+
+		<div id="sim-end" class="card hidden text-center">
+			<div class="sim-icon">🎓</div>
+			<h2>Fin de la simulation</h2>
+			<p>Vous avez terminé cette séance d'entraînement de 15 questions. Comment vous sentez-vous ?</p>
+			<p class="advice">N'oubliez pas que lors de l'entretien réel, votre attitude et votre compréhension globale sont tout aussi importantes que vos connaissances théoriques.</p>
+			<div class="sim-end-actions">
+				<button onclick="location.reload()" class="btn-primary">Refaire une simulation</button>
+				<a href={homeUrl} class="btn-secondary">Retour au sommaire</a>
+			</div>
+		</div>
+	</main>
+
+	<footer class="footer">
+		<div class="container">
+			<p>&copy; 2026 Préparation Civique</p>
+		</div>
+	</footer>
+</Layout>
+
+<script define:vars={{ questionsData }}>
+	const allQuestions = questionsData.flatMap(c => c.questions.map(q => ({...q, category: c.category})));
+	let simQuestions = [];
+	let currentIndex = 0;
+
+	const intro = document.getElementById('sim-intro');
+	const play = document.getElementById('sim-play');
+	const end = document.getElementById('sim-end');
+	const startBtn = document.getElementById('start-sim');
+	const revealBtn = document.getElementById('reveal-sim');
+	const nextBtn = document.getElementById('next-sim');
+	const qText = document.getElementById('sim-q-text');
+	const aText = document.getElementById('sim-a-text');
+	const answerBox = document.getElementById('sim-answer');
+	const counter = document.getElementById('sim-counter');
+	const progress = document.getElementById('progress');
+
+	function startSimulation() {
+		// Simulate a 15-question interview
+		simQuestions = allQuestions.sort(() => Math.random() - 0.5).slice(0, 15);
+		currentIndex = 0;
+		intro.classList.add('hidden');
+		play.classList.remove('hidden');
+		showQuestion();
+	}
+
+	function showQuestion() {
+		const q = simQuestions[currentIndex];
+		qText.textContent = q.q;
+		aText.textContent = q.a;
+		counter.textContent = `Question ${currentIndex + 1} / 15`;
+		progress.style.width = `${(currentIndex / 15) * 100}%`;
+		
+		answerBox.classList.add('hidden');
+		revealBtn.classList.remove('hidden');
+	}
+
+	startBtn.addEventListener('click', startSimulation);
+	
+	revealBtn.addEventListener('click', () => {
+		revealBtn.classList.add('hidden');
+		answerBox.classList.remove('hidden');
+	});
+
+	nextBtn.addEventListener('click', () => {
+		currentIndex++;
+		if (currentIndex < 15) {
+			showQuestion();
+		} else {
+			play.classList.add('hidden');
+			end.classList.remove('hidden');
+		}
+	});
+</script>
+
+<style>
+	.header-small { background: var(--blue); color: white; padding: 1.5rem 0; border-bottom: 3px solid var(--red); }
+	.nav-links { display: flex; justify-content: space-between; align-items: center; }
+	.back-link { color: white; text-decoration: none; font-weight: 700; }
+	.category-tag { background: rgba(255,255,255,0.2); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+
+	.simulator-container { margin: 4rem auto; max-width: 800px !important; }
+	.card { background: white; padding: 4rem; border-radius: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.08); border: 1px solid var(--border-color); }
+	.text-center { text-align: center; }
+	.hidden { display: none; }
+
+	.sim-icon { font-size: 4rem; margin-bottom: 1.5rem; }
+	.sim-intro h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #1a202c; }
+	.sim-intro p { font-size: 1.25rem; color: #4a5568; line-height: 1.6; margin-bottom: 2.5rem; }
+
+	.sim-meta { margin-bottom: 2rem; }
+	#sim-counter { font-weight: 700; color: #718096; text-transform: uppercase; font-size: 0.85rem; margin-bottom: 0.75rem; display: block; }
+	.progress-bar { background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden; }
+	.progress-fill { background: var(--blue); height: 100%; transition: width 0.4s; }
+
+	.sim-question { margin-bottom: 3rem; background: #f8fafc; padding: 2.5rem; border-radius: 16px; border-left: 8px solid var(--red); }
+	.agent-name { color: var(--red); font-weight: 800; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 0.75rem; }
+	#sim-q-text { font-size: 2rem; color: #1a202c; margin: 0; line-height: 1.3; }
+
+	.btn-primary { background: var(--blue); color: white; border: none; padding: 1rem 2.5rem; border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 1.1rem; transition: transform 0.2s; box-shadow: 0 4px 12px rgba(0,35,149,0.3); }
+	.btn-primary:hover { transform: translateY(-3px); background: #001d7e; }
+	
+	.btn-reveal { background: var(--red); color: white; border: none; padding: 1rem 2.5rem; border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 1.1rem; transition: transform 0.2s; box-shadow: 0 4px 12px rgba(237,41,57,0.3); }
+	.btn-reveal:hover { transform: translateY(-3px); background: #c53030; }
+
+	.answer-box { background: #def7ec; padding: 2rem; border-radius: 16px; border: 1px solid #31c48d; animation: slideUp 0.4s ease-out; }
+	#sim-a-text { font-size: 1.25rem; font-weight: 600; color: #03543f; margin-bottom: 1.5rem; line-height: 1.5; }
+
+	@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+	.advice { font-style: italic; color: #718096; margin: 2rem 0; font-size: 1.1rem; }
+	.btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e0; padding: 0.75rem 1.5rem; border-radius: 50px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; margin-top: 1rem; }
+	.sim-end-actions { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+
+	@media (max-width: 640px) {
+		.card { padding: 2rem 1.5rem; }
+		#sim-q-text { font-size: 1.5rem; }
+		.sim-question { padding: 1.5rem; }
+	}
+</style>

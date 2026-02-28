@@ -1,0 +1,210 @@
+---
+import Layout from '../layouts/Layout.astro';
+import questionsData from '../data/questions.json';
+
+const title = "Évaluer mon niveau - Préparation Civique";
+const homeUrl = `${import.meta.env.BASE_URL}/`;
+---
+
+<Layout title={title}>
+	<header class="header-small">
+		<div class="container">
+			<nav class="nav-links">
+				<a href={homeUrl} class="back-link">← Retour au sommaire</a>
+				<span class="category-tag">Auto-Évaluation</span>
+			</nav>
+		</div>
+	</header>
+
+	<main class="container quiz-container">
+		<div id="quiz-intro" class="card text-center">
+			<h1>Testez vos connaissances</h1>
+			<p>Ce test comporte 10 questions tirées au hasard. Saurez-vous répondre correctement à toutes ?</p>
+			<button id="start-quiz" class="btn-primary">Démarrer le test</button>
+		</div>
+
+		<div id="quiz-play" class="card hidden">
+			<div class="quiz-header">
+				<div class="progress-bar"><div id="progress" class="progress-fill"></div></div>
+				<span id="question-counter">Question 1/10</span>
+			</div>
+			
+			<div class="question-box">
+				<h2 id="quiz-question-text">Question ici</h2>
+			</div>
+
+			<div id="quiz-options" class="options-grid">
+				<!-- Options dynamically injected here -->
+			</div>
+
+			<div id="quiz-feedback" class="feedback hidden">
+				<p id="feedback-text"></p>
+				<button id="next-question" class="btn-secondary">Question suivante</button>
+			</div>
+		</div>
+
+		<div id="quiz-results" class="card hidden text-center">
+			<h2>Résultats du test</h2>
+			<div class="score-circle">
+				<span id="final-score">0</span><small>/10</small>
+			</div>
+			<p id="result-message">Message ici</p>
+			<div class="results-actions">
+				<button onclick="location.reload()" class="btn-primary">Recommencer</button>
+				<a href={homeUrl} class="btn-secondary">Retour au sommaire</a>
+			</div>
+		</div>
+	</main>
+
+	<footer class="footer">
+		<div class="container">
+			<p>&copy; 2026 Préparation Civique</p>
+		</div>
+	</footer>
+</Layout>
+
+<script define:vars={{ questionsData }}>
+	let currentQuestions = [];
+	let currentIndex = 0;
+	let score = 0;
+
+	const intro = document.getElementById('quiz-intro');
+	const play = document.getElementById('quiz-play');
+	const results = document.getElementById('quiz-results');
+	const startBtn = document.getElementById('start-quiz');
+	const nextBtn = document.getElementById('next-question');
+	const qText = document.getElementById('quiz-question-text');
+	const optionsBox = document.getElementById('quiz-options');
+	const feedback = document.getElementById('quiz-feedback');
+	const feedbackText = document.getElementById('feedback-text');
+	const progress = document.getElementById('progress');
+	const counter = document.getElementById('question-counter');
+
+	function shuffle(array) {
+		return array.sort(() => Math.random() - 0.5);
+	}
+
+	function startQuiz() {
+		// Flatten all questions
+		const allQuestions = questionsData.flatMap(c => c.questions.map(q => ({...q, category: c.category})));
+		currentQuestions = shuffle(allQuestions).slice(0, 10);
+		
+		currentIndex = 0;
+		score = 0;
+		
+		intro.classList.add('hidden');
+		play.classList.remove('hidden');
+		showQuestion();
+	}
+
+	function showQuestion() {
+		const q = currentQuestions[currentIndex];
+		qText.textContent = q.q;
+		counter.textContent = `Question ${currentIndex + 1}/10`;
+		progress.style.width = `${(currentIndex / 10) * 100}%`;
+		
+		// Generate options
+		// We use the correct answer + 3 random answers from other questions
+		const allAnswers = questionsData.flatMap(c => c.questions.map(q => q.a));
+		let distractors = shuffle(allAnswers.filter(a => a !== q.a)).slice(0, 3);
+		let options = shuffle([q.a, ...distractors]);
+
+		optionsBox.innerHTML = '';
+		options.forEach(opt => {
+			const btn = document.createElement('button');
+			btn.className = 'option-btn';
+			btn.textContent = opt;
+			btn.onclick = () => checkAnswer(opt, q.a, btn);
+			optionsBox.appendChild(btn);
+		});
+
+		feedback.classList.add('hidden');
+	}
+
+	function checkAnswer(selected, correct, btn) {
+		const buttons = document.querySelectorAll('.option-btn');
+		buttons.forEach(b => b.disabled = true);
+
+		if (selected === correct) {
+			score++;
+			btn.classList.add('correct');
+			feedbackText.textContent = "✅ Bravo ! C'est la bonne réponse.";
+		} else {
+			btn.classList.add('wrong');
+			buttons.forEach(b => {
+				if (b.textContent === correct) b.classList.add('correct');
+			});
+			feedbackText.textContent = "❌ Dommage... La bonne réponse était affichée en vert.";
+		}
+
+		feedback.classList.remove('hidden');
+	}
+
+	startBtn.addEventListener('click', startQuiz);
+	nextBtn.addEventListener('click', () => {
+		currentIndex++;
+		if (currentIndex < 10) {
+			showQuestion();
+		} else {
+			showResults();
+		}
+	});
+
+	function showResults() {
+		play.classList.add('hidden');
+		results.classList.remove('hidden');
+		document.getElementById('final-score').textContent = score;
+		
+		const msg = document.getElementById('result-message');
+		if (score === 10) msg.textContent = "Parfait ! Vous êtes prêt pour l'examen.";
+		else if (score >= 7) msg.textContent = "Très bien ! Encore un petit effort de révision.";
+		else msg.textContent = "Continuez à réviser, vous y êtes presque !";
+	}
+</script>
+
+<style>
+	.header-small {
+		background: var(--blue);
+		color: white;
+		padding: 1.5rem 0;
+		border-bottom: 3px solid var(--red);
+	}
+	.nav-links { display: flex; justify-content: space-between; align-items: center; }
+	.back-link { color: white; text-decoration: none; font-weight: 700; }
+	.category-tag { background: rgba(255,255,255,0.2); padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+
+	.quiz-container { margin: 3rem auto; max-width: 700px !important; }
+	.card { background: white; padding: 3rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
+	.text-center { text-align: center; }
+	.hidden { display: none; }
+
+	.btn-primary { background: var(--blue); color: white; border: none; padding: 1rem 2rem; border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 1.1rem; transition: transform 0.2s; }
+	.btn-primary:hover { transform: translateY(-3px); background: #001d7e; }
+	.btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e0; padding: 0.75rem 1.5rem; border-radius: 50px; font-weight: 600; cursor: pointer; text-decoration: none; }
+
+	.quiz-header { margin-bottom: 2rem; }
+	.progress-bar { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem; }
+	.progress-fill { background: var(--blue); height: 100%; transition: width 0.3s; }
+
+	.question-box h2 { font-size: 1.75rem; color: #1a202c; margin-bottom: 2rem; line-height: 1.3; }
+
+	.options-grid { display: grid; gap: 1rem; }
+	.option-btn { background: white; border: 2px solid #e2e8f0; padding: 1.25rem; border-radius: 12px; text-align: left; cursor: pointer; font-size: 1.05rem; font-weight: 500; transition: all 0.2s; }
+	.option-btn:hover:not(:disabled) { border-color: var(--blue); background: #f0f7ff; }
+	.option-btn.correct { background: #def7ec; border-color: #31c48d; color: #03543f; font-weight: 700; }
+	.option-btn.wrong { background: #fde8e8; border-color: #f98080; color: #9b1c1c; }
+
+	.feedback { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e2e8f0; animation: slideUp 0.3s ease-out; }
+	@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+	.feedback p { font-weight: 700; margin-bottom: 1.5rem; font-size: 1.1rem; }
+
+	.score-circle { width: 120px; height: 120px; border: 8px solid var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 2rem auto; font-size: 3rem; font-weight: 900; color: var(--blue); }
+	.score-circle small { font-size: 1rem; color: #718096; }
+
+	.results-actions { display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; }
+
+	@media (max-width: 640px) {
+		.card { padding: 1.5rem; }
+		.question-box h2 { font-size: 1.25rem; }
+	}
+</style>
