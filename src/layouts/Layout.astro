@@ -6,53 +6,86 @@ interface Props {
 const { title } = Astro.props;
 ---
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="description" content="Préparez-vous pour l'examen de citoyenneté française" />
+		<meta
+			name="description"
+			content="Préparez-vous pour l'examen de citoyenneté française"
+		/>
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap"
+			rel="stylesheet"
+		/>
 		<title>{title}</title>
 	</head>
 	<body>
 		<slot />
+		<style is:global>
+			:root {
+				--primary: #002395; /* French Blue */
+				--primary-hover: #001e82;
+				--accent: #ed2939; /* French Red */
+				--bg-main: #f8fafc;
+				--bg-surface: #ffffff;
+				--text-main: #0f172a;
+				--text-muted: #475569;
+				--border-color: #e2e8f0;
+				--shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+				--shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+					0 2px 4px -2px rgb(0 0 0 / 0.1);
+				--shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1),
+					0 4px 6px -4px rgb(0 0 0 / 0.1);
+				--shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1),
+					0 8px 10px -6px rgb(0 0 0 / 0.1);
+				--radius-sm: 8px;
+				--radius-md: 12px;
+				--radius-lg: 16px;
+				--radius-xl: 24px;
+			}
+			html {
+				font-family: "Open Sans", system-ui, -apple-system, sans-serif;
+				background: var(--bg-main);
+				color: var(--text-main);
+				scroll-behavior: smooth;
+				-webkit-font-smoothing: antialiased;
+				-moz-osx-font-smoothing: grayscale;
+			}
+			body {
+				margin: 0;
+				padding: 0;
+				min-height: 100vh;
+				line-height: 1.6;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			.container {
+				max-width: 900px;
+				margin: 0 auto;
+				padding: 2rem 1rem;
+			}
+			h1,
+			h2,
+			h3,
+			h4,
+			h5,
+			h6 {
+				font-family: "Poppins", system-ui, -apple-system, sans-serif;
+				color: var(--text-main);
+				margin-top: 0;
+				font-weight: 700;
+				line-height: 1.2;
+			}
+			p {
+				color: var(--text-muted);
+			}
+		</style>
 	</body>
 </html>
-<style is:global>
-	:root {
-		--blue: #002395;
-		--white: #ffffff;
-		--red: #ed2939;
-		--light-gray: #f4f7f6;
-		--border-color: #e2e8f0;
-		--text-color: #1a202c;
-		--accent-blue: #3182ce;
-		--card-bg: #ffffff;
-	}
-	html {
-		font-family: 'Inter', system-ui, -apple-system, sans-serif;
-		background: var(--light-gray);
-		color: var(--text-color);
-		scroll-behavior: smooth;
-	}
-	body {
-		margin: 0;
-		padding: 0;
-		min-height: 100vh;
-		line-height: 1.5;
-	}
-	* {
-		box-sizing: border-box;
-	}
-	.container {
-		max-width: 900px;
-		margin: 0 auto;
-		padding: 2rem 1rem;
-	}
-	h1, h2, h3 {
-		color: var(--blue);
-		margin-top: 0;
-	}
-</style>

@@ -1,5 +1,5 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
 
 const title = "Préparation Civique - Réussir votre Naturalisation";
 ---
@@ -15,7 +15,10 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 				</div>
 				<h1>Préparation Civique</h1>
 			</div>
-			<p class="subtitle">Votre guide intelligent pour réussir l'entretien de naturalisation française</p>
+			<p class="subtitle">
+				Votre guide intelligent pour réussir l'entretien de naturalisation
+				française
+			</p>
 		</div>
 	</header>
 
@@ -23,29 +26,47 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 		<section class="hero-section">
 			<div class="hero-text">
 				<h2>Préparez-vous de manière scientifique et efficace</h2>
-				<p>L'entretien d'assimilation n'est pas qu'un examen de connaissances, c'est une discussion. Notre plateforme utilise la répétition espacée pour vous aider à mémoriser les valeurs, l'histoire et la culture de la République sans effort.</p>
-				
+				<p>
+					L'entretien d'assimilation n'est pas qu'un examen de connaissances,
+					c'est une discussion. Notre plateforme utilise la répétition espacée
+					pour vous aider à mémoriser les valeurs, l'histoire et la culture de
+					la République sans effort.
+				</p>
+
 				<div class="cta-group" id="auth-cta">
-					<a href={`${import.meta.env.BASE_URL}/diagnostic/`} class="btn-primary" id="main-cta">Évaluer mon niveau maintenant</a>
+					<a
+						href={`${import.meta.env.BASE_URL}/diagnostic/`}
+						class="btn-primary"
+						id="main-cta">Évaluer mon niveau maintenant</a
+					>
 					<p class="cta-sub">Test gratuit de 20 questions • 5 minutes</p>
 				</div>
 			</div>
-			
+
 			<div class="features-grid">
 				<div class="feature-card">
 					<div class="feature-icon">🎯</div>
 					<h3>Test de positionnement</h3>
-					<p>Découvrez vos points forts et les thèmes (Histoire, Géographie, Valeurs) que vous devez travailler en priorité.</p>
+					<p>
+						Découvrez vos points forts et les thèmes (Histoire, Géographie,
+						Valeurs) que vous devez travailler en priorité.
+					</p>
 				</div>
 				<div class="feature-card">
 					<div class="feature-icon">🧠</div>
 					<h3>Répétition espacée</h3>
-					<p>Ne perdez plus de temps à relire ce que vous savez déjà. L'algorithme se concentre sur vos faiblesses.</p>
+					<p>
+						Ne perdez plus de temps à relire ce que vous savez déjà.
+						L'algorithme se concentre sur vos faiblesses.
+					</p>
 				</div>
 				<div class="feature-card">
 					<div class="feature-icon">📈</div>
 					<h3>Progression visible</h3>
-					<p>Suivez votre jauge de préparation et votre série de révisions quotidiennes pour rester motivé jusqu'au jour J.</p>
+					<p>
+						Suivez votre jauge de préparation et votre série de révisions
+						quotidiennes pour rester motivé jusqu'au jour J.
+					</p>
 				</div>
 			</div>
 		</section>
@@ -54,7 +75,9 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 	<footer class="footer">
 		<div class="container">
 			<div class="footer-links">
-				<a href={`${import.meta.env.BASE_URL}/library/`}>Toutes les questions (Bibliothèque)</a>
+				<a href={`${import.meta.env.BASE_URL}/library/`}
+					>Toutes les questions (Bibliothèque)</a
+				>
 			</div>
 			<p>&copy; 2026 Préparation Civique - France</p>
 		</div>
@@ -62,67 +85,99 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 </Layout>
 
 <script>
-	import { getProfile } from '../utils/store.js';
+	import { getProfile } from "../utils/store.js";
 
 	// Client-side check to see if user already has a profile
-	document.addEventListener('DOMContentLoaded', () => {
+	document.addEventListener("DOMContentLoaded", () => {
 		const profile = getProfile();
-		const mainCta = document.getElementById('main-cta') as HTMLAnchorElement;
-		const ctaSub = document.querySelector('.cta-sub') as HTMLElement;
-		
+		const mainCta = document.getElementById("main-cta") as HTMLAnchorElement;
+		const ctaSub = document.querySelector(".cta-sub") as HTMLElement;
+
 		if (profile && profile.diagnosticDone) {
 			mainCta.href = `${import.meta.env.BASE_URL}/dashboard/`;
 			mainCta.textContent = "Aller à mon tableau de bord";
-			if (ctaSub) ctaSub.style.display = 'none';
+			if (ctaSub) ctaSub.style.display = "none";
 		}
 	});
 </script>
 
 <style>
 	.header {
-		background: var(--blue);
+		background: #002395; /* French Blue */
 		color: white;
-		padding: 4rem 0;
+		padding: 5rem 0;
 		text-align: center;
-		border-bottom: 5px solid var(--red);
+		border-bottom: 5px solid var(--accent);
+		position: relative;
+		overflow: hidden;
 	}
+	.header::after {
+		content: "";
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 40%;
+		background: linear-gradient(
+			to top,
+			rgba(0, 0, 0, 0.1) 0%,
+			transparent 100%
+		);
+		pointer-events: none;
+	}
+
 	.logo {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		margin-bottom: 1.5rem;
+		margin-bottom: 2rem;
+		position: relative;
+		z-index: 10;
 	}
+
 	.flag {
 		display: flex;
-		width: 80px;
-		height: 50px;
-		border-radius: 4px;
+		width: 90px;
+		height: 60px;
+		border-radius: var(--radius-sm);
 		overflow: hidden;
-		box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+		margin-bottom: 0.5rem;
 	}
-	.flag span { flex: 1; }
-	.flag .blue { background: #002395; }
-	.flag .white { background: #ffffff; }
-	.flag .red { background: #ed2939; }
-	
+	.flag span {
+		flex: 1;
+	}
+	.flag .blue {
+		background: #002395;
+	}
+	.flag .white {
+		background: #ffffff;
+	}
+	.flag .red {
+		background: #ed2939;
+	}
+
 	.header h1 {
 		color: white;
 		margin: 1.5rem 0 0.5rem;
-		font-size: 3rem;
-		font-weight: 900;
+		font-size: 3.5rem;
+		font-weight: 800;
 		letter-spacing: -0.04em;
 	}
 	.subtitle {
 		font-size: 1.5rem;
-		opacity: 0.9;
-		font-weight: 300;
-		max-width: 600px;
+		opacity: 0.95;
+		font-weight: 400;
+		max-width: 650px;
 		margin: 0 auto;
+		position: relative;
+		z-index: 10;
+		line-height: 1.5;
 	}
 
 	.main-content {
-		padding-top: 4rem;
-		padding-bottom: 4rem;
+		padding-top: 5rem;
+		padding-bottom: 5rem;
 	}
 
 	.hero-section {
@@ -139,13 +194,13 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 
 	.hero-text h2 {
 		font-size: 2.25rem;
-		color: #1a202c;
+		color: var(--text-main);
 		margin-bottom: 1.5rem;
 	}
 
 	.hero-text p {
-		font-size: 1.2rem;
-		color: #4a5568;
+		font-size: 1.25rem;
+		color: var(--text-muted);
 		line-height: 1.6;
 		margin-bottom: 2.5rem;
 	}
@@ -158,70 +213,82 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 	}
 
 	.btn-primary {
-		background: var(--red);
+		background: var(--accent);
 		color: white;
-		padding: 1.25rem 2.5rem;
+		padding: 1.25rem 3rem;
 		border-radius: 50px;
-		font-weight: 800;
+		font-family: "Poppins", sans-serif;
+		font-weight: 700;
 		font-size: 1.25rem;
 		text-decoration: none;
-		transition: transform 0.2s, box-shadow 0.2s;
+		transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 		box-shadow: 0 10px 25px rgba(237, 41, 57, 0.3);
-		display: inline-block;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.btn-primary:hover {
 		transform: translateY(-3px);
 		box-shadow: 0 15px 35px rgba(237, 41, 57, 0.4);
-		background: #c53030;
+		background: #dc2626; /* Slightly darker red */
 	}
 
 	.cta-sub {
-		color: #718096;
+		color: var(--text-muted);
 		font-size: 0.95rem;
-		font-weight: 500;
+		font-weight: 600;
 	}
 
 	.features-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 2rem;
+		gap: 2.5rem;
 		width: 100%;
 	}
 
 	.feature-card {
-		background: white;
+		background: var(--bg-surface);
 		padding: 2.5rem 2rem;
-		border-radius: 20px;
-		box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+		border-radius: var(--radius-xl);
+		box-shadow: var(--shadow-lg);
 		border: 1px solid var(--border-color);
 		text-align: left;
-		transition: transform 0.3s;
+		transition: transform 0.3s ease, box-shadow 0.3s ease;
 	}
 
 	.feature-card:hover {
 		transform: translateY(-5px);
+		box-shadow: var(--shadow-xl);
 	}
 
 	.feature-icon {
 		font-size: 3rem;
 		margin-bottom: 1.5rem;
+		background: #eff6ff;
+		width: 72px;
+		height: 72px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--radius-md);
 	}
 
 	.feature-card h3 {
 		font-size: 1.5rem;
-		color: #1a202c;
+		color: var(--text-main);
 		margin-bottom: 1rem;
 	}
 
 	.feature-card p {
-		color: #4a5568;
+		color: var(--text-muted);
 		line-height: 1.5;
+		font-size: 1.05rem;
 	}
 
 	.footer {
-		background: #1a202c;
-		color: #a0aec0;
+		background: #0f172a; /* Slate 900 */
+		color: #94a3b8; /* Slate 400 */
 		padding: 4rem 0;
 		text-align: center;
 	}
@@ -232,15 +299,31 @@ const title = "Préparation Civique - Réussir votre Naturalisation";
 		margin-bottom: 2rem;
 	}
 	.footer-links a {
-		color: white;
+		color: #f1f5f9; /* Slate 100 */
 		text-decoration: none;
 		font-weight: 600;
+		transition: color 0.2s;
 	}
-	.footer-links a:hover { text-decoration: underline; }
+	.footer-links a:hover {
+		color: var(--accent);
+	}
 
 	@media (max-width: 768px) {
-		.header h1 { font-size: 2rem; }
-		.hero-text h2 { font-size: 1.75rem; }
-		.btn-primary { padding: 1rem 2rem; font-size: 1.1rem; }
+		.header {
+			padding: 3rem 0;
+		}
+		.header h1 {
+			font-size: 2.25rem;
+		}
+		.hero-text h2 {
+			font-size: 1.75rem;
+		}
+		.btn-primary {
+			padding: 1rem 2rem;
+			font-size: 1.1rem;
+		}
+		.feature-card {
+			padding: 2rem 1.5rem;
+		}
 	}
 </style>
